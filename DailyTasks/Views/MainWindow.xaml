@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:pages="clr-namespace:DailyTasks.Views.Pages"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:views="clr-namespace:DailyTasks.Views"
     Title="DailyTasks"
     Width="1120"
     Height="760"
@@ -19,6 +20,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -30,9 +32,11 @@
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
+        <views:FocusBar x:Name="SessionBar" Grid.Row="1" />
+
         <ui:NavigationView
             x:Name="RootNavigation"
-            Grid.Row="1"
+            Grid.Row="2"
             IsBackButtonVisible="Collapsed"
             OpenPaneLength="220"
             PaneDisplayMode="Left">
