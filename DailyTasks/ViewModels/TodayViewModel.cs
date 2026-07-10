@@ -13,9 +13,13 @@ namespace DailyTasks.ViewModels;
 public partial class TodayViewModel : TaskListViewModel
 {
     private const int MaxBigThree = 3;
+    private const int StaleAfterDays = 5;
 
     private readonly ICategoryService _categories;
     private readonly SettingsService _settings;
+    private readonly Queue<TaskItem> _staleQueue = new();
+
+    private TaskItem? _staleTask;
 
     /// <summary>The typed text with date/priority words removed; what actually gets saved.</summary>
     private string _parsedTitle = string.Empty;
@@ -44,8 +48,22 @@ public partial class TodayViewModel : TaskListViewModel
     [ObservableProperty]
     private string _bigThreePromptHint = string.Empty;
 
-    public TodayViewModel(ITaskService tasks, ICategoryService categories, SettingsService settings)
-        : base(tasks)
+    [ObservableProperty]
+    private bool _showStaleNudge;
+
+    [ObservableProperty]
+    private string _staleText = string.Empty;
+
+    [ObservableProperty]
+    private string _staleMoreText = string.Empty;
+
+    public TodayViewModel(
+        ITaskService tasks,
+        ICategoryService categories,
+        SettingsService settings,
+        FocusService focus,
+        ITaskEditor editor)
+        : base(tasks, focus, editor)
     {
         _categories = categories;
         _settings = settings;
@@ -189,9 +207,18 @@ public partial class TodayViewModel : TaskListViewModel
         }
     }
 
+    // ---- once-a-day rituals ----
+
+    protected override Task AfterLoadAsync(IReadOnlyList<TaskItem> allTasks)
+    {
+        OfferBigThree();
+        QueueStaleTasks(allTasks);
+        return Task.CompletedTask;
+    }
+
     // ---- the Big 3 ritual ----
 
-    protected override void AfterLoad()
+    private void OfferBigThree()
     {
         var alreadyAnswered = _settings.LastBigThreePrompt?.Date == DateTime.Today;
 
@@ -258,5 +285,93 @@ public partial class TodayViewModel : TaskListViewModel
         _settings.LastBigThreePrompt = DateTime.Today;
         ShowBigThreePrompt = false;
         BigThreeCandidates.Clear();
+    }
+
+    // ---- the stale-task nudge ----
+
+    private void QueueStaleTasks(IReadOnlyList<TaskItem> allTasks)
+    {
+        _staleQueue.Clear();
+
+        foreach (var task in allTasks.Where(IsStale).OrderBy(t => t.CreatedAt))
+        {
+            _staleQueue.Enqueue(task);
+        }
+
+        ShowNextStale();
+    }
+
+    private static bool IsStale(TaskItem task) =>
+        !task.IsCompleted
+        && (DateTime.Today - task.CreatedAt.Date).Days >= StaleAfterDays
+        && (task.DueDate is null || task.DueDate.Value.Date < DateTime.Today)
+        && task.LastNudgedAt?.Date != DateTime.Today
+        && !IsPinnedToday(task);
+
+    private void ShowNextStale()
+    {
+        if (!_staleQueue.TryDequeue(out _staleTask))
+        {
+            ShowStaleNudge = false;
+            return;
+        }
+
+        var age = (DateTime.Today - _staleTask.CreatedAt.Date).Days;
+
+        StaleText = $"“{_staleTask.Title}” has been open {age} days. Still relevant?";
+        StaleMoreText = _staleQueue.Count > 0 ? $"+{_staleQueue.Count} more to review" : string.Empty;
+        ShowStaleNudge = true;
+    }
+
+    [RelayCommand]
+    private async Task StaleDoNowAsync()
+    {
+        var task = _staleTask!;
+        task.LastNudgedAt = DateTime.Now;
+        await Tasks.UpdateAsync(task);
+        await Focus.StartAsync(task);
+        ShowNextStale();
+    }
+
+    [RelayCommand]
+    private async Task StaleRescheduleAsync()
+    {
+        var task = _staleTask!;
+        task.DueDate = DateTime.Today.AddDays(1);
+        task.PostponedCount++;
+        task.LastNudgedAt = DateTime.Now;
+        await Tasks.UpdateAsync(task);
+
+        // Now due tomorrow, so it leaves the Today list.
+        RemoveCardFor(task);
+        ShowNextStale();
+    }
+
+    [RelayCommand]
+    private async Task StaleDeleteAsync()
+    {
+        var task = _staleTask!;
+        await Tasks.DeleteAsync(task);
+        RemoveCardFor(task);
+        ShowNextStale();
+    }
+
+    [RelayCommand]
+    private async Task StaleSkipAsync()
+    {
+        var task = _staleTask!;
+        task.LastNudgedAt = DateTime.Now;
+        await Tasks.UpdateAsync(task);
+        ShowNextStale();
+    }
+
+    private void RemoveCardFor(TaskItem task)
+    {
+        var card = Items.Concat(BigThree).FirstOrDefault(i => ReferenceEquals(i.Model, task));
+
+        if (card is not null)
+        {
+            RemoveItem(card);
+        }
     }
 }

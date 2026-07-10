@@ -11,12 +11,15 @@ namespace DailyTasks.ViewModels;
 /// which tasks they show via <see cref="Includes"/>; grouping and sorting are left
 /// to each page's XAML.
 /// </summary>
-public abstract partial class TaskListViewModel(ITaskService tasks) : ObservableObject
+public abstract partial class TaskListViewModel(ITaskService tasks, FocusService focus, ITaskEditor editor)
+    : ObservableObject
 {
     [ObservableProperty]
     private bool _isEmpty = true;
 
     protected ITaskService Tasks { get; } = tasks;
+
+    protected FocusService Focus { get; } = focus;
 
     public ObservableCollection<TaskItemViewModel> Items { get; } = [];
 
@@ -29,7 +32,9 @@ public abstract partial class TaskListViewModel(ITaskService tasks) : Observable
     {
         ClearAll();
 
-        foreach (var task in await Tasks.GetAllAsync())
+        var all = await Tasks.GetAllAsync();
+
+        foreach (var task in all)
         {
             if (Includes(task))
             {
@@ -38,7 +43,7 @@ public abstract partial class TaskListViewModel(ITaskService tasks) : Observable
         }
 
         UpdateEmpty();
-        AfterLoad();
+        await AfterLoadAsync(all);
     }
 
     protected virtual void ClearAll()
@@ -67,14 +72,27 @@ public abstract partial class TaskListViewModel(ITaskService tasks) : Observable
 
     protected virtual void UpdateEmpty() => IsEmpty = Items.Count == 0;
 
-    /// <summary>Runs at the end of every load; Today uses it to raise its ritual prompt.</summary>
-    protected virtual void AfterLoad()
-    {
-    }
+    /// <summary>
+    /// Runs at the end of every load with the full unfiltered task list; Today
+    /// uses it for the Big 3 ritual and the stale-task nudge.
+    /// </summary>
+    protected virtual Task AfterLoadAsync(IReadOnlyList<TaskItem> allTasks) => Task.CompletedTask;
 
     protected void Attach(TaskItemViewModel item) => item.CompletionChanged += OnCompletionChanged;
 
     protected void Detach(TaskItemViewModel item) => item.CompletionChanged -= OnCompletionChanged;
+
+    [RelayCommand]
+    private Task StartFocusAsync(TaskItemViewModel item) => Focus.StartAsync(item.Model);
+
+    [RelayCommand]
+    private async Task EditAsync(TaskItemViewModel item)
+    {
+        if (await editor.EditAsync(item.Model))
+        {
+            item.Refresh();
+        }
+    }
 
     [RelayCommand]
     private async Task DeleteAsync(TaskItemViewModel item)

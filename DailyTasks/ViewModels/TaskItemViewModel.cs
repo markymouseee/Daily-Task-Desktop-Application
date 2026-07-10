@@ -27,6 +27,10 @@ public partial class TaskItemViewModel : ObservableObject
 
     public string Title => Model.Title;
 
+    public string? WhyReason => Model.WhyReason;
+
+    public string? ContextResumeNote => Model.ContextResumeNote;
+
     public string CategoryName => Model.Category.Name;
 
     public string CategoryColor => Model.Category.ColorHex;
@@ -42,6 +46,9 @@ public partial class TaskItemViewModel : ObservableObject
     /// which is what a plain ascending sort over a nullable would do.
     /// </summary>
     public DateTime DueSortKey => Model.DueDate ?? DateTime.MaxValue;
+
+    /// <summary>Re-reads every wrapped property after the model was edited elsewhere.</summary>
+    public void Refresh() => OnPropertyChanged(string.Empty);
 
     partial void OnIsCompletedChanged(bool value)
     {

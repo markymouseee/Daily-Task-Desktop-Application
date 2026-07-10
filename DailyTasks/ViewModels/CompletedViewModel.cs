@@ -3,7 +3,8 @@ using DailyTasks.Services;
 
 namespace DailyTasks.ViewModels;
 
-public partial class CompletedViewModel(ITaskService tasks) : TaskListViewModel(tasks)
+public partial class CompletedViewModel(ITaskService tasks, FocusService focus, ITaskEditor editor)
+    : TaskListViewModel(tasks, focus, editor)
 {
     public override string EmptyMessage => "Nothing completed yet.";
 
