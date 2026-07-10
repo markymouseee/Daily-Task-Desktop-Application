@@ -47,6 +47,54 @@ public sealed class SettingsService
         }
     }
 
+    public int PomodoroMinutes
+    {
+        get => _preferences.PomodoroMinutes;
+        set
+        {
+            var clamped = Math.Clamp(value, 1, 180);
+
+            if (_preferences.PomodoroMinutes == clamped)
+            {
+                return;
+            }
+
+            _preferences.PomodoroMinutes = clamped;
+            Save();
+        }
+    }
+
+    /// <summary>Time of day the end-of-day recap appears.</summary>
+    public TimeSpan RecapTime
+    {
+        get => _preferences.RecapTime;
+        set
+        {
+            if (_preferences.RecapTime == value)
+            {
+                return;
+            }
+
+            _preferences.RecapTime = value;
+            Save();
+        }
+    }
+
+    public DateTime? LastRecapDate
+    {
+        get => _preferences.LastRecapDate;
+        set
+        {
+            if (_preferences.LastRecapDate == value)
+            {
+                return;
+            }
+
+            _preferences.LastRecapDate = value;
+            Save();
+        }
+    }
+
     public void Load()
     {
         if (!File.Exists(FilePath))
@@ -76,5 +124,11 @@ public sealed class SettingsService
         public ApplicationTheme Theme { get; set; } = ApplicationTheme.Dark;
 
         public DateTime? LastBigThreePrompt { get; set; }
+
+        public int PomodoroMinutes { get; set; } = 25;
+
+        public TimeSpan RecapTime { get; set; } = new(18, 0, 0);
+
+        public DateTime? LastRecapDate { get; set; }
     }
 }
