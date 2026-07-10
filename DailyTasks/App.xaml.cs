@@ -42,6 +42,10 @@ public partial class App : Application
         var hotkeys = _services.GetRequiredService<GlobalHotkeyService>();
         hotkeys.Pressed += (_, _) => ShowQuickCapture();
         hotkeys.Register(new WindowInteropHelper(main).Handle);
+
+        var recap = _services.GetRequiredService<RecapService>();
+        recap.RecapDue += (_, stats) => new RecapWindow(stats).Show();
+        recap.Start();
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -73,8 +77,13 @@ public partial class App : Application
 
         services.AddSingleton<ITaskService, TaskService>();
         services.AddSingleton<ICategoryService, CategoryService>();
+        services.AddSingleton<IInterruptionService, InterruptionService>();
+        services.AddSingleton<ITaskEditor, TaskEditor>();
         services.AddSingleton<SettingsService>();
         services.AddSingleton<GlobalHotkeyService>();
+        services.AddSingleton<FocusService>();
+        services.AddSingleton<RecapService>();
+        services.AddSingleton<FocusViewModel>();
         services.AddSingleton<INavigationViewPageProvider, PageProvider>();
 
         services.AddSingleton<MainWindow>();
@@ -88,6 +97,7 @@ public partial class App : Application
         services.AddTransient<CompletedPage>();
         services.AddTransient<CompletedViewModel>();
         services.AddTransient<InsightsPage>();
+        services.AddTransient<InsightsViewModel>();
         services.AddTransient<SettingsPage>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<QuickCaptureWindow>();

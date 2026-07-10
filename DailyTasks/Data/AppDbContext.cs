@@ -10,6 +10,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<Category> Categories => Set<Category>();
 
+    public DbSet<InterruptionEvent> Interruptions => Set<InterruptionEvent>();
+
     /// <summary>
     /// %LOCALAPPDATA%\DailyTasks\dailytasks.db
     /// </summary>
@@ -50,5 +52,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         task.HasIndex(t => t.IsCompleted);
         task.HasIndex(t => t.DueDate);
+
+        var interruption = modelBuilder.Entity<InterruptionEvent>();
+
+        interruption.Property(i => i.Reason).HasConversion<string>().HasMaxLength(16);
+
+        // Interruption history stays useful for Insights even after its task is gone.
+        interruption.HasOne(i => i.TaskItem)
+            .WithMany()
+            .HasForeignKey(i => i.TaskItemId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        interruption.HasIndex(i => i.OccurredAt);
     }
 }
