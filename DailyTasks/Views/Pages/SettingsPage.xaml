@@ -43,6 +43,60 @@
                     <ui:SymbolIcon
                         VerticalAlignment="Center"
                         FontSize="20"
+                        Symbol="Timer24" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="Focus session length" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="Minutes per Pomodoro." />
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardControl.Header>
+
+            <ui:NumberBox
+                Width="130"
+                Maximum="180"
+                Minimum="1"
+                SpinButtonPlacementMode="Inline"
+                Value="{Binding PomodoroMinutes}" />
+        </ui:CardControl>
+
+        <ui:CardControl Margin="0,0,0,10">
+            <ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="20"
+                        Symbol="ClockAlarm24" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="Daily recap time" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="When the end-of-day summary appears (24h clock)." />
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardControl.Header>
+
+            <ui:TextBox
+                Width="130"
+                PlaceholderText="18:00"
+                Text="{Binding RecapTimeText, UpdateSourceTrigger=PropertyChanged}" />
+        </ui:CardControl>
+
+        <ui:CardControl Margin="0,0,0,10">
+            <ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="20"
                         Symbol="Flash24" />
                     <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
                         <TextBlock
