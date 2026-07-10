@@ -37,6 +37,9 @@ public class TaskItem
     /// </summary>
     public DateTime? BigThreeDate { get; set; }
 
+    /// <summary>When the stale-task nudge last asked about this task, so it asks at most once a day.</summary>
+    public DateTime? LastNudgedAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public DateTime? CompletedAt { get; set; }
