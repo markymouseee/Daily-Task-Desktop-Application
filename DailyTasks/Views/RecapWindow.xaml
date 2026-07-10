@@ -1,0 +1,104 @@
+<ui:FluentWindow
+    x:Class="DailyTasks.Views.RecapWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Daily recap"
+    Width="440"
+    Background="{DynamicResource ApplicationBackgroundBrush}"
+    ExtendsContentIntoTitleBar="True"
+    FontFamily="Segoe UI Variable Text"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    SizeToContent="Height"
+    Topmost="True"
+    WindowBackdropType="Mica"
+    WindowCornerPreference="Round"
+    WindowStartupLocation="CenterScreen">
+
+    <StackPanel Margin="24,8,24,24">
+        <ui:TitleBar Title="Daily recap" ShowMaximize="False" ShowMinimize="False" />
+
+        <TextBlock
+            Margin="0,10,0,0"
+            FontFamily="Segoe UI Variable Display"
+            FontSize="22"
+            FontWeight="Bold"
+            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+            Text="How today went" />
+
+        <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
+            <ui:SymbolIcon
+                VerticalAlignment="Center"
+                FontSize="18"
+                Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                Symbol="CheckmarkCircle24" />
+            <TextBlock
+                x:Name="CompletionLine"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                FontSize="14"
+                Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+        </StackPanel>
+
+        <StackPanel
+            x:Name="SlippedRow"
+            Margin="0,10,0,0"
+            Orientation="Horizontal">
+            <ui:SymbolIcon
+                VerticalAlignment="Center"
+                FontSize="18"
+                Foreground="#F59E0B"
+                Symbol="ArrowRight24" />
+            <TextBlock
+                x:Name="SlippedLine"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                FontSize="14"
+                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel
+            x:Name="TimeRow"
+            Margin="0,10,0,0"
+            Orientation="Horizontal">
+            <ui:SymbolIcon
+                VerticalAlignment="Center"
+                FontSize="18"
+                Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                Symbol="Timer24" />
+            <TextBlock
+                x:Name="TimeLine"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                FontSize="14"
+                Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+        </StackPanel>
+
+        <StackPanel
+            x:Name="InterruptionRow"
+            Margin="0,10,0,0"
+            Orientation="Horizontal">
+            <ui:SymbolIcon
+                VerticalAlignment="Center"
+                FontSize="18"
+                Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                Symbol="Pause24" />
+            <TextBlock
+                x:Name="InterruptionLine"
+                Margin="10,0,0,0"
+                VerticalAlignment="Center"
+                FontSize="14"
+                Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+        </StackPanel>
+
+        <ui:Button
+            Margin="0,20,0,0"
+            HorizontalAlignment="Right"
+            Padding="16,8"
+            Appearance="Primary"
+            Click="OnDone"
+            Content="Done for today" />
+    </StackPanel>
+</ui:FluentWindow>
