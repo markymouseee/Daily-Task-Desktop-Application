@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.9" />
+    <!-- Overrides the 2.1.11 EF Core pulls in transitively (GHSA-2m69-gcr7-jv3q). -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="WPF-UI" Version="4.3.0" />
+  </ItemGroup>
+
+</Project>

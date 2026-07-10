@@ -1,0 +1,104 @@
+# ---------------------------------------------
+# .gitignore for the DailyTasks .NET WPF app
+# ---------------------------------------------
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+[Dd]ebugPublic/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+# Publish output
+[Pp]ublish/
+publish/
+*.[Pp]ublish.xml
+*.azurePubxml
+PublishScripts/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.tlog
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# MSBuild / test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+# ---------------------------------------------
+# App-specific
+# ---------------------------------------------
+# Local SQLite database lives in %LOCALAPPDATA%\DailyTasks, but ignore any
+# stray copies that land in the working tree.
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# OS cruft
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
