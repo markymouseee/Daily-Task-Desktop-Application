@@ -66,6 +66,35 @@
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="NoWrap" />
 
+                    <!--  Why this matters  -->
+                    <TextBlock
+                        Margin="0,3,0,0"
+                        FontSize="12"
+                        FontStyle="Italic"
+                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                        Text="{Binding WhyReason}"
+                        TextTrimming="CharacterEllipsis"
+                        Visibility="{Binding WhyReason, Converter={StaticResource EmptyToVisibility}}" />
+
+                    <!--  Where you left off — shown prominently when returning to a task  -->
+                    <StackPanel
+                        Margin="0,6,0,0"
+                        Orientation="Horizontal"
+                        Visibility="{Binding ContextResumeNote, Converter={StaticResource EmptyToVisibility}}">
+                        <ui:SymbolIcon
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                            Symbol="Comment24" />
+                        <TextBlock
+                            Margin="5,0,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                            Text="{Binding ContextResumeNote}"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+
                     <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
                         <!--  Category pill  -->
                         <Border
@@ -119,16 +148,37 @@
                     </StackPanel>
                 </StackPanel>
 
-                <ui:Button
+                <StackPanel
                     Grid.Column="3"
                     Margin="0,0,10,0"
-                    Padding="8"
                     VerticalAlignment="Center"
-                    Appearance="Transparent"
-                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                    CommandParameter="{Binding}"
-                    Icon="{ui:SymbolIcon Delete24}"
-                    ToolTip="Delete task" />
+                    Orientation="Horizontal">
+                    <ui:Button
+                        x:Name="FocusButton"
+                        Padding="8"
+                        AutomationProperties.Name="Start focus"
+                        Appearance="Transparent"
+                        Command="{Binding DataContext.StartFocusCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                        CommandParameter="{Binding}"
+                        Icon="{ui:SymbolIcon Play24}"
+                        ToolTip="Start a focus session" />
+                    <ui:Button
+                        Padding="8"
+                        AutomationProperties.Name="Edit task"
+                        Appearance="Transparent"
+                        Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                        CommandParameter="{Binding}"
+                        Icon="{ui:SymbolIcon Edit24}"
+                        ToolTip="Edit task" />
+                    <ui:Button
+                        Padding="8"
+                        AutomationProperties.Name="Delete task"
+                        Appearance="Transparent"
+                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                        CommandParameter="{Binding}"
+                        Icon="{ui:SymbolIcon Delete24}"
+                        ToolTip="Delete task" />
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -136,6 +186,7 @@
             <DataTrigger Binding="{Binding IsCompleted}" Value="True">
                 <Setter TargetName="TitleText" Property="TextDecorations" Value="Strikethrough" />
                 <Setter TargetName="TitleText" Property="Opacity" Value="0.55" />
+                <Setter TargetName="FocusButton" Property="Visibility" Value="Collapsed" />
             </DataTrigger>
 
             <DataTrigger Binding="{Binding DueDate, Converter={StaticResource DueDateIsOverdue}}" Value="True">
