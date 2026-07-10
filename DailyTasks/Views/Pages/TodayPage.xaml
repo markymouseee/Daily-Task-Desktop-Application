@@ -120,6 +120,83 @@
                     </Grid>
                 </Border>
 
+                <!--  Stale-task nudge  -->
+                <Border
+                    Margin="0,10,0,0"
+                    Padding="12,10"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="#66F59E0B"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Visibility="{Binding ShowStaleNudge, Converter={StaticResource BoolToVisibility}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ui:SymbolIcon
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="18"
+                            Foreground="#F59E0B"
+                            Symbol="QuestionCircle24" />
+
+                        <StackPanel
+                            Grid.Column="1"
+                            Margin="10,0,10,0"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                FontSize="13"
+                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                Text="{Binding StaleText}"
+                                TextTrimming="CharacterEllipsis" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                Text="{Binding StaleMoreText}"
+                                Visibility="{Binding StaleMoreText, Converter={StaticResource EmptyToVisibility}}" />
+                        </StackPanel>
+
+                        <StackPanel
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal">
+                            <ui:Button
+                                Margin="0,0,6,0"
+                                Padding="10,5"
+                                Appearance="Primary"
+                                Command="{Binding StaleDoNowCommand}"
+                                Content="Do it now"
+                                FontSize="12"
+                                Icon="{ui:SymbolIcon Play24}" />
+                            <ui:Button
+                                Margin="0,0,6,0"
+                                Padding="10,5"
+                                Appearance="Secondary"
+                                Command="{Binding StaleRescheduleCommand}"
+                                Content="Reschedule"
+                                FontSize="12"
+                                Icon="{ui:SymbolIcon ArrowClockwise24}" />
+                            <ui:Button
+                                Margin="0,0,6,0"
+                                Padding="10,5"
+                                Appearance="Secondary"
+                                Command="{Binding StaleDeleteCommand}"
+                                Content="Delete"
+                                FontSize="12"
+                                Icon="{ui:SymbolIcon Delete24}" />
+                            <ui:Button
+                                Padding="10,5"
+                                Appearance="Transparent"
+                                Command="{Binding StaleSkipCommand}"
+                                Content="Not now"
+                                FontSize="12" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
                 <!--  Live echo of what the parser understood  -->
                 <StackPanel
                     Margin="12,8,0,0"
