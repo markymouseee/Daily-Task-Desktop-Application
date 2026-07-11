@@ -78,9 +78,13 @@ public partial class App : Application
             options.UseSqlite(AppDbContext.ConnectionString));
 
         services.AddSingleton<ITaskService, TaskService>();
+        services.AddSingleton<IProjectService, ProjectService>();
         services.AddSingleton<ICategoryService, CategoryService>();
         services.AddSingleton<IInterruptionService, InterruptionService>();
         services.AddSingleton<ITaskEditor, TaskEditor>();
+        services.AddSingleton<ISubtaskEditor, SubtaskEditor>();
+        services.AddSingleton<IProjectExporter, ProjectExporter>();
+        services.AddSingleton<IProjectCoordinator, ProjectCoordinator>();
         services.AddSingleton<SettingsService>();
         services.AddSingleton<GlobalHotkeyService>();
         services.AddSingleton<FocusService>();
@@ -97,6 +101,8 @@ public partial class App : Application
         services.AddTransient<TodayPage>();
         services.AddTransient<AllTasksPage>();
         services.AddTransient<AllTasksViewModel>();
+        services.AddTransient<ProjectsPage>();
+        services.AddTransient<ProjectsViewModel>();
         services.AddTransient<CompletedPage>();
         services.AddTransient<CompletedViewModel>();
         services.AddTransient<InsightsPage>();
