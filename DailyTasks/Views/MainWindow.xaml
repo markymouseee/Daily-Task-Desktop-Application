@@ -17,73 +17,323 @@
     WindowCornerPreference="Round"
     WindowStartupLocation="CenterScreen">
 
+    <ui:FluentWindow.Resources>
+        <!--  Small uppercase muted group heading, shared idiom with page section labels.  -->
+        <Style x:Key="NavGroupLabel" TargetType="TextBlock">
+            <Setter Property="Margin" Value="22,0,0,6" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+        </Style>
+
+        <!--  A flat, pill-shaped nav item. Active = accent tint + accent text; hover = subtle tint.  -->
+        <Style x:Key="NavItem" TargetType="RadioButton">
+            <Setter Property="Margin" Value="10,1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Height="38">
+                            <Border
+                                x:Name="Bg"
+                                Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                CornerRadius="8"
+                                Opacity="0" />
+                            <ContentPresenter Margin="14,0" VerticalAlignment="Center" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <!--  Hover only applies to inactive items, with a smooth fade  -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="False" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <MultiTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="Bg"
+                                                Storyboard.TargetProperty="Opacity"
+                                                To="0.08"
+                                                Duration="0:0:0.15" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </MultiTrigger.EnterActions>
+                                <MultiTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="Bg"
+                                                Storyboard.TargetProperty="Opacity"
+                                                To="0"
+                                                Duration="0:0:0.15" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </MultiTrigger.ExitActions>
+                            </MultiTrigger>
+
+                            <!--  Active state: accent pill + accent icon/label + heavier weight  -->
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.16" />
+                                <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </ui:FluentWindow.Resources>
+
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="220" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-        <ui:TitleBar
-            Grid.Row="0"
-            Title="DailyTasks">
-            <ui:TitleBar.Icon>
-                <ui:SymbolIcon Symbol="TaskListSquareLtr24" />
-            </ui:TitleBar.Icon>
-        </ui:TitleBar>
+        <!--  ============ Sidebar ============  -->
+        <Border
+            Grid.Column="0"
+            Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+            BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+            BorderThickness="0,0,1,0">
+            <DockPanel LastChildFill="True">
+                <!--  Logo + app name + divider  -->
+                <StackPanel DockPanel.Dock="Top" Margin="16,14,16,0">
+                    <StackPanel Orientation="Horizontal">
+                        <Border
+                            Width="34"
+                            Height="34"
+                            Background="{DynamicResource AccentFillColorDefaultBrush}"
+                            CornerRadius="9">
+                            <ui:SymbolIcon
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="18"
+                                Foreground="White"
+                                Symbol="TaskListSquareLtr24" />
+                        </Border>
+                        <TextBlock
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            FontFamily="Segoe UI Variable Display"
+                            FontSize="17"
+                            FontWeight="Bold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="DailyTasks" />
+                    </StackPanel>
+                    <Border
+                        Height="1"
+                        Margin="0,14,0,0"
+                        Background="{DynamicResource DividerStrokeColorDefaultBrush}" />
+                </StackPanel>
 
-        <views:FocusBar x:Name="SessionBar" Grid.Row="1" />
+                <!--  Pinned user row + theme toggle (does not scroll)  -->
+                <Border DockPanel.Dock="Bottom" Margin="12,8,12,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-        <ui:NavigationView
-            x:Name="RootNavigation"
-            Grid.Row="2"
-            IsBackButtonVisible="Collapsed"
-            OpenPaneLength="220"
-            PaneDisplayMode="Left">
+                        <Border
+                            Grid.Column="0"
+                            Width="34"
+                            Height="34"
+                            Background="{DynamicResource AccentFillColorDefaultBrush}"
+                            CornerRadius="17">
+                            <TextBlock
+                                x:Name="AvatarInitials"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Foreground="White"
+                                Text="?" />
+                        </Border>
 
-            <ui:NavigationView.MenuItems>
-                <ui:NavigationViewItem
-                    Content="Today"
-                    TargetPageType="{x:Type pages:TodayPage}">
-                    <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="CalendarToday24" />
-                    </ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
+                        <TextBlock
+                            x:Name="UserNameText"
+                            Grid.Column="1"
+                            Margin="10,0"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="User"
+                            TextTrimming="CharacterEllipsis" />
 
-                <ui:NavigationViewItem
-                    Content="All Tasks"
-                    TargetPageType="{x:Type pages:AllTasksPage}">
-                    <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="AppsList24" />
-                    </ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
+                        <ui:Button
+                            x:Name="ThemeToggle"
+                            Grid.Column="2"
+                            Padding="8"
+                            Appearance="Transparent"
+                            Click="OnToggleTheme"
+                            Icon="{ui:SymbolIcon WeatherMoon24}"
+                            ToolTip="Toggle light / dark theme" />
+                    </Grid>
+                </Border>
 
-                <ui:NavigationViewItem
-                    Content="Completed"
-                    TargetPageType="{x:Type pages:CompletedPage}">
-                    <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="CheckmarkCircle24" />
-                    </ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
+                <!--  Nav groups (fills remaining space, scrolls if needed)  -->
+                <ScrollViewer Margin="0,14,0,0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource NavGroupLabel}" Text="WORKSPACE" />
 
-                <ui:NavigationViewItem
-                    Content="Insights"
-                    TargetPageType="{x:Type pages:InsightsPage}">
-                    <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="DataTrending24" />
-                    </ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
-            </ui:NavigationView.MenuItems>
+                        <RadioButton
+                            x:Name="TodayNav"
+                            Checked="OnNavChecked"
+                            GroupName="Nav"
+                            Style="{StaticResource NavItem}"
+                            Tag="{x:Type pages:TodayPage}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Symbol="CalendarToday24" />
+                                <TextBlock
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Text="Today" />
+                            </StackPanel>
+                        </RadioButton>
 
-            <ui:NavigationView.FooterMenuItems>
-                <ui:NavigationViewItem
-                    Content="Settings"
-                    TargetPageType="{x:Type pages:SettingsPage}">
-                    <ui:NavigationViewItem.Icon>
-                        <ui:SymbolIcon Symbol="Settings24" />
-                    </ui:NavigationViewItem.Icon>
-                </ui:NavigationViewItem>
-            </ui:NavigationView.FooterMenuItems>
-        </ui:NavigationView>
+                        <RadioButton
+                            Checked="OnNavChecked"
+                            GroupName="Nav"
+                            Style="{StaticResource NavItem}"
+                            Tag="{x:Type pages:AllTasksPage}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Symbol="AppsList24" />
+                                <TextBlock
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Text="All Tasks" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton
+                            Checked="OnNavChecked"
+                            GroupName="Nav"
+                            Style="{StaticResource NavItem}"
+                            Tag="{x:Type pages:ProjectsPage}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Symbol="Folder24" />
+                                <TextBlock
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Text="Projects" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton
+                            Checked="OnNavChecked"
+                            GroupName="Nav"
+                            Style="{StaticResource NavItem}"
+                            Tag="{x:Type pages:CompletedPage}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Symbol="CheckmarkCircle24" />
+                                <TextBlock
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Text="Completed" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <TextBlock
+                            Margin="22,20,0,6"
+                            Style="{StaticResource NavGroupLabel}"
+                            Text="ANALYTICS" />
+
+                        <RadioButton
+                            Checked="OnNavChecked"
+                            GroupName="Nav"
+                            Style="{StaticResource NavItem}"
+                            Tag="{x:Type pages:InsightsPage}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Symbol="DataTrending24" />
+                                <TextBlock
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Text="Insights" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton
+                            Margin="10,22,10,1"
+                            Checked="OnNavChecked"
+                            GroupName="Nav"
+                            Style="{StaticResource NavItem}"
+                            Tag="{x:Type pages:SettingsPage}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Symbol="Settings24" />
+                                <TextBlock
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Text="Settings" />
+                            </StackPanel>
+                        </RadioButton>
+                    </StackPanel>
+                </ScrollViewer>
+            </DockPanel>
+        </Border>
+
+        <!--  ============ Content ============  -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <ui:TitleBar Grid.Row="0" Title="DailyTasks">
+                <ui:TitleBar.Icon>
+                    <ui:SymbolIcon Symbol="TaskListSquareLtr24" />
+                </ui:TitleBar.Icon>
+            </ui:TitleBar>
+
+            <views:FocusBar x:Name="SessionBar" Grid.Row="1" />
+
+            <Frame
+                x:Name="ContentFrame"
+                Grid.Row="2"
+                Background="Transparent"
+                NavigationUIVisibility="Hidden" />
+        </Grid>
     </Grid>
 </ui:FluentWindow>

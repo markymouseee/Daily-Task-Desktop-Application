@@ -131,3 +131,132 @@ public sealed class BoolToVisibilityConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
+
+/// <summary>Visible when the bound bool is false (inverse of BoolToVisibility).</summary>
+public sealed class InverseBoolToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is true ? Visibility.Collapsed : Visibility.Visible;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>Logical negation, for binding an IsEnabled against a "busy" flag.</summary>
+public sealed class InverseBoolConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is not true;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is not true;
+}
+
+/// <summary>Visible only when the bound integer count is zero (for empty-state hints).</summary>
+public sealed class ZeroToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is int n && n == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>Visible only when the bound integer count is greater than zero.</summary>
+public sealed class PositiveToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is int n && n > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>
+/// Turns a 0–1 fraction into a star <see cref="GridLength"/>, so a progress bar built
+/// from Grid columns sizes its segments proportionally.
+/// </summary>
+public sealed class FractionToStarConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var fraction = value is double d ? Math.Clamp(d, 0, 1) : 0;
+        return new GridLength(fraction, GridUnitType.Star);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>
+/// The completion tint for a progress bar: gray when nothing's done, blue while in
+/// progress, green once complete. Pass the fraction (0–1).
+/// </summary>
+public sealed class ProgressToBrushConverter : IValueConverter
+{
+    private static readonly SolidColorBrush Empty = Palette.Brush(Color.FromRgb(0x64, 0x74, 0x8B));
+    private static readonly SolidColorBrush InProgress = Palette.Brush(Color.FromRgb(0x3B, 0x82, 0xF6));
+    private static readonly SolidColorBrush Complete = Palette.Brush(Color.FromRgb(0x22, 0xC5, 0x5E));
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var fraction = value is double d ? d : 0;
+
+        return fraction >= 1 ? Complete
+            : fraction > 0 ? InProgress
+            : Empty;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>
+/// [fraction, availableWidth] → fraction × width, in pixels. Used to size the coloured
+/// segments of a progress bar reliably (unlike binding a ColumnDefinition's width, which
+/// doesn't inherit DataContext).
+/// </summary>
+public sealed class FractionOfWidthConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length < 2 || values[0] is not double fraction || values[1] is not double width || width <= 0)
+        {
+            return 0d;
+        }
+
+        return Math.Max(0, Math.Clamp(fraction, 0, 1) * width);
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>Fill colour for a subtask's status pill and its Kanban card accent.</summary>
+public sealed class SubtaskStatusToBrushConverter : IValueConverter
+{
+    private static readonly IReadOnlyDictionary<SubtaskStatus, SolidColorBrush> Brushes = new Dictionary<SubtaskStatus, SolidColorBrush>
+    {
+        [SubtaskStatus.Todo] = Palette.Brush(Color.FromRgb(0x64, 0x74, 0x8B)),
+        [SubtaskStatus.InProgress] = Palette.Brush(Color.FromRgb(0x3B, 0x82, 0xF6)),
+        [SubtaskStatus.Review] = Palette.Brush(Color.FromRgb(0xA8, 0x55, 0xF7)),
+        [SubtaskStatus.Done] = Palette.Brush(Color.FromRgb(0x22, 0xC5, 0x5E)),
+        [SubtaskStatus.Blocked] = Palette.Brush(Color.FromRgb(0xEF, 0x44, 0x44)),
+    };
+
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var brush = value is SubtaskStatus s && Brushes.TryGetValue(s, out var b) ? b : Brushes[SubtaskStatus.Todo];
+
+        // "Fill" gives the translucent pill background, matching the category pill idiom.
+        if (parameter as string == "Fill")
+        {
+            return Palette.Brush(brush.Color, 0x2E);
+        }
+
+        return brush;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

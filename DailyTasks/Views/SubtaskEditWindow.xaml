@@ -1,0 +1,169 @@
+<ui:FluentWindow
+    x:Class="DailyTasks.Views.SubtaskEditWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Subtask"
+    Width="480"
+    MaxHeight="800"
+    Background="{DynamicResource ApplicationBackgroundBrush}"
+    ExtendsContentIntoTitleBar="True"
+    FontFamily="Segoe UI Variable Text"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    SizeToContent="Height"
+    WindowBackdropType="Mica"
+    WindowCornerPreference="Round"
+    WindowStartupLocation="CenterOwner">
+
+    <StackPanel Margin="24,8,24,24">
+        <ui:TitleBar x:Name="Heading" Title="Subtask" ShowMaximize="False" ShowMinimize="False" />
+
+        <TextBlock
+            Margin="0,12,0,6"
+            FontSize="12"
+            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+            Text="Title" />
+        <ui:TextBox x:Name="TitleBox" PlaceholderText="Wire up the login endpoint" />
+
+        <Grid Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Priority" />
+                <ComboBox x:Name="PriorityBox" HorizontalAlignment="Stretch" SelectedIndex="1">
+                    <ComboBoxItem Content="High" />
+                    <ComboBoxItem Content="Medium" />
+                    <ComboBoxItem Content="Low" />
+                </ComboBox>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Status" />
+                <ComboBox
+                    x:Name="StatusBox"
+                    HorizontalAlignment="Stretch"
+                    SelectionChanged="OnStatusChanged"
+                    SelectedIndex="0">
+                    <ComboBoxItem Content="To Do" />
+                    <ComboBoxItem Content="In Progress" />
+                    <ComboBoxItem Content="Review" />
+                    <ComboBoxItem Content="Done" />
+                    <ComboBoxItem Content="Blocked" />
+                </ComboBox>
+            </StackPanel>
+        </Grid>
+
+        <!--  Blocked reason, only when Blocked  -->
+        <StackPanel x:Name="BlockedRow" Visibility="Collapsed">
+            <TextBlock
+                Margin="0,14,0,6"
+                FontSize="12"
+                Foreground="#EF4444"
+                Text="Why is it blocked?" />
+            <ui:TextBox x:Name="BlockedBox" PlaceholderText="waiting on the API keys from ops" />
+        </StackPanel>
+
+        <Grid Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Est. hours" />
+                <ui:NumberBox
+                    x:Name="EstimateBox"
+                    Maximum="500"
+                    Minimum="0"
+                    PlaceholderText="4"
+                    SpinButtonPlacementMode="Inline" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Actual hours" />
+                <ui:NumberBox
+                    x:Name="ActualBox"
+                    Maximum="500"
+                    Minimum="0"
+                    PlaceholderText="0"
+                    SpinButtonPlacementMode="Inline" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="4">
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Due date" />
+                <DatePicker x:Name="DueBox" Width="140" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock
+            Margin="0,14,0,6"
+            FontSize="12"
+            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+            Text="Why does this matter?" />
+        <ui:TextBox x:Name="WhyBox" PlaceholderText="unblocks the whole checkout flow" />
+
+        <TextBlock
+            Margin="0,14,0,6"
+            FontSize="12"
+            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+            Text="Where you left off" />
+        <ui:TextBox x:Name="ResumeBox" PlaceholderText="stubbed the happy path, error handling still TODO" />
+
+        <StackPanel x:Name="GitRow">
+            <TextBlock
+                Margin="0,14,0,6"
+                FontSize="12"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="Git link — completes this subtask when a commit message contains it" />
+            <ui:TextBox
+                x:Name="GitBox"
+                FontFamily="Cascadia Mono, Consolas"
+                PlaceholderText="closes #128  ·  feature/login-endpoint" />
+        </StackPanel>
+
+        <StackPanel
+            Margin="0,20,0,0"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <ui:Button
+                Margin="0,0,8,0"
+                Padding="14,8"
+                Appearance="Secondary"
+                Click="OnCancel"
+                Content="Cancel" />
+            <ui:Button
+                Padding="14,8"
+                Appearance="Primary"
+                Click="OnSave"
+                Content="Save" />
+        </StackPanel>
+    </StackPanel>
+</ui:FluentWindow>
