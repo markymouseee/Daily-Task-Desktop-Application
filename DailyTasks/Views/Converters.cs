@@ -162,6 +162,32 @@ public sealed class ZeroToVisibilityConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+/// <summary>
+/// Turns an indent amount (double) into a left-inset <see cref="Thickness"/>, keeping the
+/// row's fixed right/vertical padding. Used to nest Gantt subtask labels under their phase.
+/// </summary>
+public sealed class IndentToMarginConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var indent = value is double d ? d : 0;
+        return new Thickness(12 + indent, 0, 10, 0);
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+/// <summary>True when the bound nullable date falls on today — used to flag Big 3 cards.</summary>
+public sealed class IsTodayConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
+        value is DateTime date && date.Date == DateTime.Today;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
 /// <summary>Visible only when the bound integer count is greater than zero.</summary>
 public sealed class PositiveToVisibilityConverter : IValueConverter
 {
