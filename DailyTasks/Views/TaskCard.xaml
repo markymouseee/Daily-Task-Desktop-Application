@@ -23,15 +23,7 @@
             Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
-            CornerRadius="10">
-            <Border.Effect>
-                <DropShadowEffect
-                    BlurRadius="14"
-                    Direction="270"
-                    Opacity="0.16"
-                    ShadowDepth="2"
-                    Color="Black" />
-            </Border.Effect>
+            CornerRadius="12">
 
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -41,11 +33,12 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!--  Priority accent  -->
+                <!--  Accent strip, shown only on Big 3 cards to set them apart  -->
                 <Border
+                    x:Name="AccentStrip"
                     Grid.Column="0"
-                    Background="{Binding Priority, Converter={StaticResource PriorityToBrush}}"
-                    CornerRadius="9,0,0,9" />
+                    Background="Transparent"
+                    CornerRadius="12,0,0,12" />
 
                 <CheckBox
                     Grid.Column="1"
@@ -220,6 +213,11 @@
         </Border>
 
         <DataTemplate.Triggers>
+            <!--  Big 3 cards carry an accent left strip; regular cards don't  -->
+            <DataTrigger Binding="{Binding Model.BigThreeDate, Converter={StaticResource IsToday}}" Value="True">
+                <Setter TargetName="AccentStrip" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+            </DataTrigger>
+
             <DataTrigger Binding="{Binding IsCompleted}" Value="True">
                 <Setter TargetName="TitleText" Property="TextDecorations" Value="Strikethrough" />
                 <Setter TargetName="TitleText" Property="Opacity" Value="0.55" />
