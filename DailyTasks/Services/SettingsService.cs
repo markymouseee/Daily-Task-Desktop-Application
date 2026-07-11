@@ -95,6 +95,57 @@ public sealed class SettingsService
         }
     }
 
+    public bool DeveloperFeaturesEnabled
+    {
+        get => _preferences.DeveloperFeaturesEnabled;
+        set
+        {
+            if (_preferences.DeveloperFeaturesEnabled == value)
+            {
+                return;
+            }
+
+            _preferences.DeveloperFeaturesEnabled = value;
+            Save();
+        }
+    }
+
+    /// <summary>Local repository the git watcher polls for task-completing commits.</summary>
+    public string? GitRepoPath
+    {
+        get => _preferences.GitRepoPath;
+        set
+        {
+            var normalised = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+            if (_preferences.GitRepoPath == normalised)
+            {
+                return;
+            }
+
+            _preferences.GitRepoPath = normalised;
+            Save();
+        }
+    }
+
+    /// <summary>Default hours available for tasks each day, for the workload warning.</summary>
+    public double FreeHoursPerDay
+    {
+        get => _preferences.FreeHoursPerDay;
+        set
+        {
+            var clamped = Math.Clamp(value, 0, 24);
+
+            if (Math.Abs(_preferences.FreeHoursPerDay - clamped) < 0.01)
+            {
+                return;
+            }
+
+            _preferences.FreeHoursPerDay = clamped;
+            Save();
+        }
+    }
+
     public void Load()
     {
         if (!File.Exists(FilePath))
@@ -130,5 +181,11 @@ public sealed class SettingsService
         public TimeSpan RecapTime { get; set; } = new(18, 0, 0);
 
         public DateTime? LastRecapDate { get; set; }
+
+        public bool DeveloperFeaturesEnabled { get; set; }
+
+        public string? GitRepoPath { get; set; }
+
+        public double FreeHoursPerDay { get; set; } = 6;
     }
 }
