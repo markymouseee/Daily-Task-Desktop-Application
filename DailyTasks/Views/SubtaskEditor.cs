@@ -4,15 +4,17 @@ using DailyTasks.Services;
 
 namespace DailyTasks.Views;
 
-public sealed class SubtaskEditor : ISubtaskEditor
+public sealed class SubtaskEditor(ITeamService team) : ISubtaskEditor
 {
-    public Task<bool> EditAsync(Subtask subtask, bool developerFeatures)
+    public async Task<bool> EditAsync(Subtask subtask, bool developerFeatures)
     {
-        var window = new SubtaskEditWindow(subtask, developerFeatures)
+        var members = await team.GetAllAsync();
+
+        var window = new SubtaskEditWindow(subtask, developerFeatures, members)
         {
             Owner = Application.Current.MainWindow,
         };
 
-        return Task.FromResult(window.ShowDialog() == true);
+        return window.ShowDialog() == true;
     }
 }

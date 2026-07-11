@@ -66,6 +66,13 @@
             </StackPanel>
         </Grid>
 
+        <TextBlock
+            Margin="0,14,0,6"
+            FontSize="12"
+            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+            Text="Assigned to" />
+        <ComboBox x:Name="AssigneeBox" DisplayMemberPath="Name" HorizontalAlignment="Stretch" />
+
         <!--  Blocked reason, only when Blocked  -->
         <StackPanel x:Name="BlockedRow" Visibility="Collapsed">
             <TextBlock
@@ -76,13 +83,38 @@
             <ui:TextBox x:Name="BlockedBox" PlaceholderText="waiting on the API keys from ops" />
         </StackPanel>
 
+        <!--  Timeline: start feeds the Gantt bar; due is the bar's end  -->
         <Grid Margin="0,14,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Start date (optional)" />
+                <DatePicker x:Name="StartBox" HorizontalAlignment="Stretch" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Due date" />
+                <DatePicker x:Name="DueBox" HorizontalAlignment="Stretch" />
+            </StackPanel>
+        </Grid>
+
+        <Grid Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
@@ -111,15 +143,6 @@
                     Minimum="0"
                     PlaceholderText="0"
                     SpinButtonPlacementMode="Inline" />
-            </StackPanel>
-
-            <StackPanel Grid.Column="4">
-                <TextBlock
-                    Margin="0,0,0,6"
-                    FontSize="12"
-                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                    Text="Due date" />
-                <DatePicker x:Name="DueBox" Width="140" />
             </StackPanel>
         </Grid>
 
