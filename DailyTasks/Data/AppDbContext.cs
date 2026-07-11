@@ -40,6 +40,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         task.Property(t => t.Notes).HasMaxLength(2000);
         task.Property(t => t.WhyReason).HasMaxLength(300);
         task.Property(t => t.ContextResumeNote).HasMaxLength(500);
+        task.Property(t => t.GitLink).HasMaxLength(200);
 
         // Store the enum as text so the database stays readable and is not
         // silently reinterpreted if enum members are ever reordered.

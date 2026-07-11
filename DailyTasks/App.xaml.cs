@@ -46,6 +46,8 @@ public partial class App : Application
         var recap = _services.GetRequiredService<RecapService>();
         recap.RecapDue += (_, stats) => new RecapWindow(stats).Show();
         recap.Start();
+
+        _services.GetRequiredService<GitWatcherService>().Start();
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -83,6 +85,7 @@ public partial class App : Application
         services.AddSingleton<GlobalHotkeyService>();
         services.AddSingleton<FocusService>();
         services.AddSingleton<RecapService>();
+        services.AddSingleton<GitWatcherService>();
         services.AddSingleton<FocusViewModel>();
         services.AddSingleton<INavigationViewPageProvider, PageProvider>();
 
