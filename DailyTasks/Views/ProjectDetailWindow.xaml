@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:models="clr-namespace:DailyTasks.Models"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:views="clr-namespace:DailyTasks.Views"
     xmlns:vm="clr-namespace:DailyTasks.ViewModels"
     Title="Project"
     Width="960"
@@ -21,6 +22,7 @@
         <!--  A subtask card, used in phase lists and Kanban columns within this window.  -->
         <DataTemplate DataType="{x:Type vm:SubtaskViewModel}">
             <Border
+                x:Name="SubCard"
                 Margin="0,0,0,8"
                 Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
@@ -94,6 +96,25 @@
                                 </StackPanel>
                             </Border>
 
+                            <!--  Assignee badge  -->
+                            <StackPanel
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Visibility="{Binding HasAssignee, Converter={StaticResource BoolToVisibility}}">
+                                <views:Avatar
+                                    VerticalAlignment="Center"
+                                    ColorHex="{Binding AssigneeColor}"
+                                    DisplayName="{Binding AssigneeName}"
+                                    Size="18" />
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="11"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding AssigneeFirstName}" />
+                            </StackPanel>
+
                             <!--  Priority  -->
                             <ui:SymbolIcon
                                 Margin="10,0,0,0"
@@ -164,6 +185,11 @@
                     <Setter TargetName="SubTitle" Property="TextDecorations" Value="Strikethrough" />
                     <Setter TargetName="SubTitle" Property="Opacity" Value="0.55" />
                 </DataTrigger>
+                <!--  Highlighted after jumping from the Gantt view  -->
+                <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                    <Setter TargetName="SubCard" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                    <Setter TargetName="SubCard" Property="BorderThickness" Value="2" />
+                </DataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
     </Window.Resources>
@@ -171,6 +197,7 @@
     <Grid>
         <Grid Margin="24,8,24,20">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -297,13 +324,34 @@
                 </Grid>
             </Border>
 
+            <!--  List / Gantt view toggle (phased projects only)  -->
+            <StackPanel
+                Grid.Row="2"
+                Margin="0,0,0,14"
+                Orientation="Horizontal"
+                Visibility="{Binding GanttAvailable, Converter={StaticResource BoolToVisibility}}">
+                <RadioButton
+                    x:Name="ListToggle"
+                    MinWidth="88"
+                    Content="List"
+                    GroupName="DetailView"
+                    IsChecked="{Binding IsGanttView, Converter={StaticResource InverseBool}, Mode=TwoWay}"
+                    Style="{StaticResource ViewToggle}" />
+                <RadioButton
+                    MinWidth="88"
+                    Content="Gantt"
+                    GroupName="DetailView"
+                    IsChecked="{Binding IsGanttView, Mode=TwoWay}"
+                    Style="{StaticResource ViewToggle}" />
+            </StackPanel>
+
             <!--  Phased detail (Waterfall / Agile / Iterative / Custom)  -->
             <ScrollViewer
-                Grid.Row="2"
+                Grid.Row="3"
                 Margin="0,0,-12,0"
                 Padding="0,0,12,0"
                 VerticalScrollBarVisibility="Auto"
-                Visibility="{Binding IsPhased, Converter={StaticResource BoolToVisibility}}">
+                Visibility="{Binding ShowPhasedList, Converter={StaticResource BoolToVisibility}}">
                 <ItemsControl ItemsSource="{Binding Phases}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:PhaseRowViewModel}">
@@ -388,9 +436,15 @@
                 </ItemsControl>
             </ScrollViewer>
 
+            <!--  Gantt timeline (phased projects), an alternate view of the same data  -->
+            <views:GanttChart
+                Grid.Row="3"
+                DataContext="{Binding Gantt}"
+                Visibility="{Binding DataContext.IsGanttView, RelativeSource={RelativeSource AncestorType={x:Type ui:FluentWindow}}, Converter={StaticResource BoolToVisibility}}" />
+
             <!--  Kanban board  -->
             <Grid
-                Grid.Row="2"
+                Grid.Row="3"
                 Visibility="{Binding IsKanban, Converter={StaticResource BoolToVisibility}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

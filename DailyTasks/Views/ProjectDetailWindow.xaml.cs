@@ -16,9 +16,51 @@ public partial class ProjectDetailWindow : FluentWindow
     {
         InitializeComponent();
         DataContext = viewModel;
+        viewModel.PropertyChanged += OnViewModelPropertyChanged;
     }
 
     private ProjectDetailViewModel ViewModel => (ProjectDetailViewModel)DataContext;
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ProjectDetailViewModel.HighlightedSubtaskId))
+        {
+            ScrollHighlightedIntoView();
+        }
+    }
+
+    /// <summary>After a Gantt bar click switches to the List, bring the target card into view.</summary>
+    private void ScrollHighlightedIntoView()
+    {
+        if (ViewModel.HighlightedSubtaskId is not { } id)
+        {
+            return;
+        }
+
+        // Defer until the List view has been laid out.
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+        {
+            var target = Descendants(this)
+                .OfType<FrameworkElement>()
+                .FirstOrDefault(fe => fe.DataContext is ViewModels.SubtaskViewModel s && s.Id == id);
+
+            target?.BringIntoView();
+        }));
+    }
+
+    private static System.Collections.Generic.IEnumerable<DependencyObject> Descendants(DependencyObject root)
+    {
+        var count = VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            yield return child;
+            foreach (var d in Descendants(child))
+            {
+                yield return d;
+            }
+        }
+    }
 
     // ---- Kanban drag and drop ----
 

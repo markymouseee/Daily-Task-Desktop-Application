@@ -12,6 +12,7 @@
     <views:InverseBoolConverter x:Key="InverseBool" />
     <views:ZeroToVisibilityConverter x:Key="ZeroToVisibility" />
     <views:PositiveToVisibilityConverter x:Key="PositiveToVisibility" />
+    <views:IndentToMarginConverter x:Key="IndentToMargin" />
 
     <!--  A rounded, three-segment progress bar: green/blue done, red blocked, track remainder.
           Apply to a DataContext exposing DoneFraction / BlockedFraction (0–1).  -->
