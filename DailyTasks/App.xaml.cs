@@ -79,12 +79,14 @@ public partial class App : Application
 
         services.AddSingleton<ITaskService, TaskService>();
         services.AddSingleton<IProjectService, ProjectService>();
+        services.AddSingleton<ITeamService, TeamService>();
         services.AddSingleton<ICategoryService, CategoryService>();
         services.AddSingleton<IInterruptionService, InterruptionService>();
         services.AddSingleton<ITaskEditor, TaskEditor>();
         services.AddSingleton<ISubtaskEditor, SubtaskEditor>();
         services.AddSingleton<IProjectExporter, ProjectExporter>();
         services.AddSingleton<IProjectCoordinator, ProjectCoordinator>();
+        services.AddSingleton<ITeamCoordinator, TeamCoordinator>();
         services.AddSingleton<SettingsService>();
         services.AddSingleton<GlobalHotkeyService>();
         services.AddSingleton<FocusService>();
