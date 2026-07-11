@@ -25,10 +25,7 @@ public partial class MainWindow : FluentWindow
 
         SessionBar.DataContext = focusViewModel;
 
-        // Display-only identity from the Windows account; no data model is involved.
-        var name = string.IsNullOrWhiteSpace(Environment.UserName) ? "User" : Environment.UserName;
-        UserNameText.Text = name;
-        AvatarInitials.Text = Initials(name);
+        UpdateIdentity();
         UpdateThemeIcon();
 
         // Selecting Today raises Checked, which performs the first navigation.
@@ -65,6 +62,16 @@ public partial class MainWindow : FluentWindow
         {
             await entering.OnNavigatedToAsync();
         }
+
+        // The name may have been edited on the Settings page we just left.
+        UpdateIdentity();
+    }
+
+    private void UpdateIdentity()
+    {
+        var name = _settings.DisplayName;
+        UserNameText.Text = name;
+        AvatarInitials.Text = Initials(name);
     }
 
     private void OnToggleTheme(object sender, RoutedEventArgs e)
