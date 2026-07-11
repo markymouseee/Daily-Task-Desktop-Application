@@ -3,6 +3,7 @@ using System;
 using DailyTasks.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DailyTasks.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260711163259_AddSubtaskStartDate")]
+    partial class AddSubtaskStartDate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -155,9 +158,6 @@ namespace DailyTasks.Data.Migrations
                     b.Property<double?>("ActualHours")
                         .HasColumnType("REAL");
 
-                    b.Property<int?>("AssignedToId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("BlockedReason")
                         .HasMaxLength(300)
                         .HasColumnType("TEXT");
@@ -211,8 +211,6 @@ namespace DailyTasks.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AssignedToId");
 
                     b.HasIndex("PhaseId");
 
@@ -308,32 +306,6 @@ namespace DailyTasks.Data.Migrations
                     b.ToTable("Tasks");
                 });
 
-            modelBuilder.Entity("DailyTasks.Models.TeamMember", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("InitialsColorHex")
-                        .IsRequired()
-                        .HasMaxLength(9)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("TeamMembers");
-                });
-
             modelBuilder.Entity("DailyTasks.Models.InterruptionEvent", b =>
                 {
                     b.HasOne("DailyTasks.Models.TaskItem", "TaskItem")
@@ -368,11 +340,6 @@ namespace DailyTasks.Data.Migrations
 
             modelBuilder.Entity("DailyTasks.Models.Subtask", b =>
                 {
-                    b.HasOne("DailyTasks.Models.TeamMember", "AssignedTo")
-                        .WithMany("Subtasks")
-                        .HasForeignKey("AssignedToId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("DailyTasks.Models.Phase", "Phase")
                         .WithMany("Subtasks")
                         .HasForeignKey("PhaseId")
@@ -383,8 +350,6 @@ namespace DailyTasks.Data.Migrations
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("AssignedTo");
 
                     b.Navigation("Phase");
 
@@ -422,11 +387,6 @@ namespace DailyTasks.Data.Migrations
             modelBuilder.Entity("DailyTasks.Models.TaskItem", b =>
                 {
                     b.Navigation("Project");
-                });
-
-            modelBuilder.Entity("DailyTasks.Models.TeamMember", b =>
-                {
-                    b.Navigation("Subtasks");
                 });
 #pragma warning restore 612, 618
         }
