@@ -15,6 +15,10 @@ public partial class SubtaskViewModel : ObservableObject
     [ObservableProperty]
     private SubtaskStatus _status;
 
+    /// <summary>Set briefly when jumped to from the Gantt view, to draw attention.</summary>
+    [ObservableProperty]
+    private bool _isHighlighted;
+
     public SubtaskViewModel(Subtask model)
     {
         Model = model;
@@ -45,6 +49,15 @@ public partial class SubtaskViewModel : ObservableObject
     public string? GitLinkPattern => Model.GitLinkPattern;
 
     public int? IterationNumber => Model.IterationNumber;
+
+    public bool HasAssignee => Model.AssignedTo is not null;
+
+    public string AssigneeName => Model.AssignedTo?.Name ?? string.Empty;
+
+    public string AssigneeFirstName =>
+        AssigneeName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+
+    public string AssigneeColor => Model.AssignedTo?.InitialsColorHex ?? "#64748B";
 
     public bool IsBlocked => Status == SubtaskStatus.Blocked;
 

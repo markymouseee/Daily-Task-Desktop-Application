@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using DailyTasks.Services;
 using Wpf.Ui.Appearance;
 
@@ -9,6 +10,10 @@ public partial class SettingsViewModel : ObservableObject
     private readonly SettingsService _settings;
     private readonly GlobalHotkeyService _hotkeys;
     private readonly GitWatcherService _gitWatcher;
+    private readonly ITeamCoordinator _team;
+
+    [ObservableProperty]
+    private string _userName;
 
     [ObservableProperty]
     private bool _isDarkTheme;
@@ -31,12 +36,14 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _gitRepoStatus = string.Empty;
 
-    public SettingsViewModel(SettingsService settings, GlobalHotkeyService hotkeys, GitWatcherService gitWatcher)
+    public SettingsViewModel(SettingsService settings, GlobalHotkeyService hotkeys, GitWatcherService gitWatcher, ITeamCoordinator team)
     {
         _settings = settings;
         _hotkeys = hotkeys;
         _gitWatcher = gitWatcher;
+        _team = team;
 
+        _userName = settings.UserName;
         _isDarkTheme = settings.Theme == ApplicationTheme.Dark;
         _pomodoroMinutes = settings.PomodoroMinutes;
         _recapTimeText = settings.RecapTime.ToString(@"hh\:mm");
@@ -52,6 +59,11 @@ public partial class SettingsViewModel : ObservableObject
     public string HotkeyStatus => _hotkeys.IsRegistered
         ? $"{GlobalHotkeyService.Gesture} — opens quick capture from anywhere."
         : $"{GlobalHotkeyService.Gesture} is unavailable; another app has claimed it.";
+
+    partial void OnUserNameChanged(string value) => _settings.UserName = value;
+
+    [RelayCommand]
+    private void ManageTeam() => _team.OpenManager();
 
     partial void OnIsDarkThemeChanged(bool value)
     {

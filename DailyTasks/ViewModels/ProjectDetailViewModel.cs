@@ -37,6 +37,15 @@ public partial class ProjectDetailViewModel : ObservableObject
     [ObservableProperty]
     private bool _isExporting;
 
+    [ObservableProperty]
+    private bool _isGanttView;
+
+    [ObservableProperty]
+    private GanttViewModel? _gantt;
+
+    [ObservableProperty]
+    private int? _highlightedSubtaskId;
+
     public ProjectDetailViewModel(
         Project project,
         IProjectService projects,
@@ -68,6 +77,12 @@ public partial class ProjectDetailViewModel : ObservableObject
     public bool IsKanban => Model.Methodology == Methodology.Kanban;
 
     public bool IsPhased => !IsKanban;
+
+    /// <summary>The Gantt view only makes sense for phased projects (it has phases to plot).</summary>
+    public bool GanttAvailable => IsPhased;
+
+    /// <summary>The phased subtask list is shown when we're not in the Gantt view.</summary>
+    public bool ShowPhasedList => IsPhased && !IsGanttView;
 
     public bool IsWaterfall => Model.Methodology == Methodology.Waterfall;
 
@@ -283,6 +298,32 @@ public partial class ProjectDetailViewModel : ObservableObject
 
     [RelayCommand]
     private void DismissCompletePrompt() => ShowCompletePrompt = false;
+
+    // Rebuild the timeline each time it's shown so it reflects the latest edits.
+    partial void OnIsGanttViewChanged(bool value)
+    {
+        if (value)
+        {
+            Gantt = new GanttViewModel(Model, ActivateSubtaskFromGantt);
+        }
+
+        OnPropertyChanged(nameof(ShowPhasedList));
+    }
+
+    /// <summary>Clicking a subtask bar in the Gantt jumps back to the List and highlights it.</summary>
+    private void ActivateSubtaskFromGantt(int subtaskId)
+    {
+        HighlightedSubtaskId = subtaskId;
+        IsGanttView = false;
+    }
+
+    partial void OnHighlightedSubtaskIdChanged(int? value)
+    {
+        foreach (var subtask in Phases.SelectMany(p => p.Subtasks))
+        {
+            subtask.IsHighlighted = subtask.Id == value;
+        }
+    }
 
     [RelayCommand]
     private async Task ExportAsync()
