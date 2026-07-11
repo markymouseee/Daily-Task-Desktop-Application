@@ -42,9 +42,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         task.Property(t => t.ContextResumeNote).HasMaxLength(500);
         task.Property(t => t.GitLink).HasMaxLength(200);
 
-        // Store the enum as text so the database stays readable and is not
+        // Store enums as text so the database stays readable and is not
         // silently reinterpreted if enum members are ever reordered.
         task.Property(t => t.Priority).HasConversion<string>().HasMaxLength(16);
+
+        // Default to "None" so rows that predate this column parse back cleanly on upgrade.
+        task.Property(t => t.Recurrence)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .HasDefaultValue(RecurrenceKind.None);
 
         task.HasOne(t => t.Category)
             .WithMany(c => c.Tasks)
