@@ -8,5 +8,7 @@ public partial class CompletedViewModel(ITaskService tasks, FocusService focus, 
 {
     public override string EmptyMessage => "Nothing completed yet.";
 
-    protected override bool Includes(TaskItem task) => task.IsCompleted;
+    // Completed projects stay on the Projects hub rather than showing here as plain cards.
+    protected override bool Includes(TaskItem task) =>
+        task.TaskType == TaskType.Simple && task.IsCompleted;
 }

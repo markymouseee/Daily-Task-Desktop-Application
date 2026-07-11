@@ -17,6 +17,8 @@ public partial class TodayViewModel : TaskListViewModel
 
     private readonly ICategoryService _categories;
     private readonly SettingsService _settings;
+    private readonly IProjectService _projectService;
+    private readonly IProjectCoordinator _projectCoordinator;
     private readonly Queue<TaskItem> _staleQueue = new();
 
     private TaskItem? _staleTask;
@@ -66,22 +68,32 @@ public partial class TodayViewModel : TaskListViewModel
     [ObservableProperty]
     private string _workloadText = string.Empty;
 
+    [ObservableProperty]
+    private bool _hasProjects;
+
     public TodayViewModel(
         ITaskService tasks,
         ICategoryService categories,
         SettingsService settings,
         FocusService focus,
         ITaskEditor editor,
-        GitWatcherService gitWatcher)
+        GitWatcherService gitWatcher,
+        IProjectService projectService,
+        IProjectCoordinator projectCoordinator)
         : base(tasks, focus, editor)
     {
         _categories = categories;
         _settings = settings;
+        _projectService = projectService;
+        _projectCoordinator = projectCoordinator;
         _freeHoursToday = settings.FreeHoursPerDay;
 
         tasks.TaskAdded += OnTaskAdded;
         gitWatcher.TaskCompleted += OnTaskCompletedByCommit;
     }
+
+    /// <summary>Active projects surfaced as distinct cards, above the flat task list.</summary>
+    public ObservableCollection<ProjectViewModel> TodayProjects { get; } = [];
 
     /// <summary>
     /// The watcher works on its own task instances, so match by id, sync our copy,
@@ -115,10 +127,17 @@ public partial class TodayViewModel : TaskListViewModel
 
     /// <summary>
     /// Today means: not done, and either due on/before today or not scheduled at all.
-    /// Overdue tasks stay visible rather than silently disappearing.
+    /// Overdue tasks stay visible rather than silently disappearing. Project heads are
+    /// excluded here — they render as their own cards from <see cref="TodayProjects"/>.
     /// </summary>
     protected override bool Includes(TaskItem task) =>
-        !task.IsCompleted && (task.DueDate is null || task.DueDate.Value.Date <= DateTime.Today);
+        task.TaskType == TaskType.Simple
+        && !task.IsCompleted
+        && (task.DueDate is null || task.DueDate.Value.Date <= DateTime.Today);
+
+    private static bool IsTodayProject(Project project) =>
+        !project.TaskItem.IsCompleted
+        && (project.TaskItem.DueDate is null || project.TaskItem.DueDate.Value.Date <= DateTime.Today);
 
     private static bool IsPinnedToday(TaskItem task) => task.BigThreeDate?.Date == DateTime.Today;
 
@@ -135,6 +154,32 @@ public partial class TodayViewModel : TaskListViewModel
         }
 
         await base.LoadAsync();
+        await LoadProjectsAsync();
+    }
+
+    private async Task LoadProjectsAsync()
+    {
+        TodayProjects.Clear();
+
+        foreach (var project in await _projectService.GetAllAsync())
+        {
+            if (IsTodayProject(project))
+            {
+                TodayProjects.Add(new ProjectViewModel(project));
+            }
+        }
+
+        HasProjects = TodayProjects.Count > 0;
+        UpdateEmpty();
+    }
+
+    [RelayCommand]
+    private async Task OpenProjectAsync(ProjectViewModel project)
+    {
+        await _projectCoordinator.OpenDetailAsync(project.Id);
+
+        // The project may have advanced or completed while the detail was open.
+        await LoadProjectsAsync();
     }
 
     // ---- two-collection bookkeeping: pinned tasks live in BigThree, the rest in Items ----
@@ -178,7 +223,7 @@ public partial class TodayViewModel : TaskListViewModel
 
     protected override void UpdateEmpty()
     {
-        IsEmpty = Items.Count == 0 && BigThree.Count == 0;
+        IsEmpty = Items.Count == 0 && BigThree.Count == 0 && TodayProjects.Count == 0;
         HasBigThree = BigThree.Count > 0;
         RecomputeWorkload();
     }
