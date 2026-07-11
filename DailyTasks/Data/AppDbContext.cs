@@ -21,6 +21,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<Subtask> Subtasks => Set<Subtask>();
 
+    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
+
     /// <summary>
     /// %LOCALAPPDATA%\DailyTasks\dailytasks.db
     /// </summary>
@@ -139,6 +141,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         subtask.HasIndex(s => s.ProjectId);
         subtask.HasIndex(s => s.PhaseId);
+
+        var member = modelBuilder.Entity<TeamMember>();
+
+        member.Property(m => m.Name).IsRequired().HasMaxLength(100);
+        member.Property(m => m.Role).HasMaxLength(60);
+        member.Property(m => m.InitialsColorHex).IsRequired().HasMaxLength(9);
+
+        // Unassign a member's subtasks rather than deleting them when the member is removed.
+        subtask.HasOne(s => s.AssignedTo)
+            .WithMany(m => m.Subtasks)
+            .HasForeignKey(s => s.AssignedToId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        subtask.HasIndex(s => s.AssignedToId);
 
         var interruption = modelBuilder.Entity<InterruptionEvent>();
 
