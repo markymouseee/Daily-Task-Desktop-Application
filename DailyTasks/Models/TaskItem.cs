@@ -8,6 +8,15 @@ public class TaskItem
 
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// A Simple task is a flat checklist row; a Project task owns a set of
+    /// <see cref="Models.Project"/> phases and subtasks and gets its own detail view.
+    /// </summary>
+    public TaskType TaskType { get; set; } = TaskType.Simple;
+
+    /// <summary>The structured project this task heads, when <see cref="TaskType"/> is Project.</summary>
+    public Project? Project { get; set; }
+
     public int CategoryId { get; set; }
 
     public Category Category { get; set; } = null!;
