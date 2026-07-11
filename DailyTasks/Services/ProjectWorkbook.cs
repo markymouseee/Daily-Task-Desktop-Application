@@ -38,6 +38,8 @@ public static class ProjectWorkbook
             BuildSheet(workbook, SheetName(project.TaskItem.Title), project.TaskItem.Title, project, project.Subtasks.ToList());
         }
 
+        BuildGanttSheet(workbook, project);
+
         workbook.SaveAs(path);
     }
 
@@ -215,6 +217,189 @@ public static class ProjectWorkbook
     private static string PriorityText(TaskPriority priority) => priority.ToString();
 
     private static string Trim(double v) => v.ToString("0.#");
+
+    // ---- Gantt worksheet: label/data columns + a weekly colour-filled timeline ----
+
+    private const int GanttFirstWeekColumn = 9; // Task … Actual Hours occupy 1–8
+
+    private static void BuildGanttSheet(XLWorkbook workbook, Project project)
+    {
+        var ws = workbook.Worksheets.Add(UniqueName(workbook, "Gantt"));
+        var isWaterfall = project.Methodology == Methodology.Waterfall;
+
+        var spans = GanttSchedule.PhaseSpans(project);
+        var byPhase = project.Subtasks.ToLookup(s => s.PhaseId);
+        var range = GanttSchedule.DateRange(spans);
+
+        var rangeStart = GanttTimelineCalculator.StartOfWeek(range?.Start ?? DateTime.Today);
+        var rangeEnd = range?.End ?? DateTime.Today.AddDays(56);
+
+        var weeks = new List<DateTime>();
+        for (var day = rangeStart; day <= rangeEnd; day = day.AddDays(7))
+        {
+            weeks.Add(day);
+        }
+
+        if (weeks.Count == 0)
+        {
+            weeks.Add(rangeStart);
+        }
+
+        var lastColumn = GanttFirstWeekColumn - 1 + weeks.Count;
+
+        // Title.
+        var title = ws.Cell(1, 1);
+        title.Value = $"{project.TaskItem.Title}  ·  {project.Methodology} — Gantt";
+        title.Style.Font.Bold = true;
+        title.Style.Font.FontSize = 14;
+        ws.Range(1, 1, 1, lastColumn).Merge();
+
+        // Header row.
+        const int headerRow = 2;
+        string[] labels = ["Task", "Assigned To", "Role", "Start Date", "Due Date", "Status", "Est. Hours", "Actual Hours"];
+        for (var c = 0; c < labels.Length; c++)
+        {
+            GanttHeaderCell(ws.Cell(headerRow, c + 1), labels[c]);
+        }
+
+        for (var w = 0; w < weeks.Count; w++)
+        {
+            var cell = ws.Cell(headerRow, GanttFirstWeekColumn + w);
+            GanttHeaderCell(cell, weeks[w].ToString("MMM d"));
+            cell.Style.Alignment.TextRotation = 90; // keep the week columns narrow
+        }
+
+        var row = headerRow + 1;
+
+        foreach (var span in spans)
+        {
+            var subs = byPhase[span.Phase.Id].ToList();
+            var phaseStatus = GanttSchedule.AggregatePhaseStatus(subs);
+
+            // Phase header row: bold + shaded across the label columns.
+            ws.Cell(row, 1).Value = span.Phase.Name;
+            ws.Range(row, 1, row, 8).Style.Fill.BackgroundColor = XLColor.FromHtml("#E2E8F0");
+            ws.Range(row, 1, row, 8).Style.Font.SetBold();
+            ws.Range(row, 1, row, 8).Style.Font.FontColor = XLColor.FromHtml("#0F172A");
+
+            WriteDate(ws.Cell(row, 4), span.Start);
+            WriteDate(ws.Cell(row, 5), span.End);
+            ws.Cell(row, 6).Value = StatusText(phaseStatus);
+
+            var est = subs.Sum(s => s.EstimatedHours ?? 0);
+            var act = subs.Sum(s => s.ActualHours ?? 0);
+            if (est > 0) ws.Cell(row, 7).Value = est;
+            if (act > 0) ws.Cell(row, 8).Value = act;
+
+            FillTimeline(ws, row, weeks, span.Start, span.End, phaseStatus);
+            row++;
+
+            foreach (var s in GanttSchedule.OrderSubtasks(subs, span))
+            {
+                var (start, end) = GanttSchedule.SubtaskSpan(s, span, isWaterfall);
+
+                ws.Cell(row, 1).Value = "    " + s.Title;
+                ws.Cell(row, 2).Value = s.AssignedTo?.Name ?? string.Empty;
+                ws.Cell(row, 3).Value = s.AssignedTo?.Role ?? string.Empty;
+                WriteDate(ws.Cell(row, 4), start);
+                WriteDate(ws.Cell(row, 5), end);
+
+                var statusCell = ws.Cell(row, 6);
+                statusCell.Value = StatusText(s.Status);
+                statusCell.Style.Fill.BackgroundColor = StatusFill(s.Status);
+
+                if (s.EstimatedHours is { } e) ws.Cell(row, 7).Value = e;
+                if (s.ActualHours is { } a) ws.Cell(row, 8).Value = a;
+
+                FillTimeline(ws, row, weeks, start, end, s.Status);
+                row++;
+            }
+        }
+
+        // Legend.
+        row += 1;
+        ws.Cell(row, 1).Value = "Legend";
+        ws.Cell(row, 1).Style.Font.Bold = true;
+        row++;
+
+        foreach (var (label, status) in new[]
+        {
+            ("Done", SubtaskStatus.Done),
+            ("In Progress", SubtaskStatus.InProgress),
+            ("Blocked", SubtaskStatus.Blocked),
+            ("Upcoming", SubtaskStatus.Todo),
+        })
+        {
+            ws.Cell(row, 1).Style.Fill.BackgroundColor = TimelineFill(status);
+            ws.Cell(row, 2).Value = label;
+            row++;
+        }
+
+        // Column widths + frozen label/data columns and header.
+        ws.Column(1).Width = 30;
+        ws.Column(2).Width = 16;
+        ws.Column(3).Width = 16;
+        ws.Column(4).Width = 12;
+        ws.Column(5).Width = 12;
+        ws.Column(6).Width = 13;
+        ws.Column(7).Width = 10;
+        ws.Column(8).Width = 11;
+        for (var w = 0; w < weeks.Count; w++)
+        {
+            ws.Column(GanttFirstWeekColumn + w).Width = 3.2;
+        }
+
+        ws.SheetView.Freeze(headerRow, 8);
+    }
+
+    private static void FillTimeline(IXLWorksheet ws, int row, List<DateTime> weeks, DateTime? start, DateTime? end, SubtaskStatus status)
+    {
+        if (start is null || end is null)
+        {
+            return;
+        }
+
+        var fill = TimelineFill(status);
+
+        for (var w = 0; w < weeks.Count; w++)
+        {
+            var weekStart = weeks[w];
+            var weekEnd = weekStart.AddDays(6);
+
+            if (weekStart <= end.Value.Date && weekEnd >= start.Value.Date)
+            {
+                ws.Cell(row, GanttFirstWeekColumn + w).Style.Fill.BackgroundColor = fill;
+            }
+        }
+    }
+
+    private static void WriteDate(IXLCell cell, DateTime? date)
+    {
+        if (date is { } d)
+        {
+            cell.Value = d;
+            cell.Style.DateFormat.Format = "yyyy-mm-dd";
+        }
+    }
+
+    private static void GanttHeaderCell(IXLCell cell, string text)
+    {
+        cell.Value = text;
+        cell.Style.Font.Bold = true;
+        cell.Style.Font.FontColor = XLColor.White;
+        cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#334155");
+        cell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+    }
+
+    /// <summary>Vivid in-app status colours, so the week block reads as a real Gantt bar.</summary>
+    private static XLColor TimelineFill(SubtaskStatus status) => status switch
+    {
+        SubtaskStatus.Done => XLColor.FromHtml("#22C55E"),
+        SubtaskStatus.InProgress => XLColor.FromHtml("#3B82F6"),
+        SubtaskStatus.Review => XLColor.FromHtml("#3B82F6"),
+        SubtaskStatus.Blocked => XLColor.FromHtml("#EF4444"),
+        _ => XLColor.FromHtml("#64748B"),
+    };
 
     /// <summary>Excel sheet names cap at 31 chars and forbid []:*?/\.</summary>
     private static string SheetName(string title)

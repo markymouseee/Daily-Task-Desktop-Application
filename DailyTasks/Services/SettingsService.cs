@@ -16,6 +16,33 @@ public sealed class SettingsService
 
     private Preferences _preferences = new();
 
+    /// <summary>Display name used for the greeting and the sidebar avatar.</summary>
+    public string UserName
+    {
+        get => _preferences.UserName;
+        set
+        {
+            var trimmed = value?.Trim() ?? string.Empty;
+
+            if (_preferences.UserName == trimmed)
+            {
+                return;
+            }
+
+            _preferences.UserName = trimmed;
+            Save();
+        }
+    }
+
+    /// <summary>
+    /// The name to actually show: the user's own if set, otherwise the Windows
+    /// account name, falling back to a friendly generic.
+    /// </summary>
+    public string DisplayName =>
+        !string.IsNullOrWhiteSpace(UserName) ? UserName
+        : !string.IsNullOrWhiteSpace(Environment.UserName) ? Environment.UserName
+        : "there";
+
     public ApplicationTheme Theme
     {
         get => _preferences.Theme;
@@ -172,6 +199,8 @@ public sealed class SettingsService
 
     private sealed class Preferences
     {
+        public string UserName { get; set; } = string.Empty;
+
         public ApplicationTheme Theme { get; set; } = ApplicationTheme.Dark;
 
         public DateTime? LastBigThreePrompt { get; set; }

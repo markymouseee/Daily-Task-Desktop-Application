@@ -82,7 +82,7 @@ public sealed class ProjectService(IDbContextFactory<AppDbContext> factory) : IP
             .AsNoTracking()
             .Include(p => p.TaskItem).ThenInclude(t => t.Category)
             .Include(p => p.Phases)
-            .Include(p => p.Subtasks)
+            .Include(p => p.Subtasks).ThenInclude(s => s.AssignedTo)
             .ToListAsync();
     }
 
@@ -93,17 +93,18 @@ public sealed class ProjectService(IDbContextFactory<AppDbContext> factory) : IP
             .AsNoTracking()
             .Include(p => p.TaskItem).ThenInclude(t => t.Category)
             .Include(p => p.Phases)
-            .Include(p => p.Subtasks)
+            .Include(p => p.Subtasks).ThenInclude(s => s.AssignedTo)
             .FirstOrDefaultAsync(predicate);
 
     public async Task AddSubtaskAsync(Subtask subtask)
     {
         await using var db = await factory.CreateDbContextAsync();
 
-        // Callers pass FK scalars (ProjectId/PhaseId); drop any navigation loaded
-        // by another context so EF doesn't try to re-insert the project or phase.
+        // Callers pass FK scalars (ProjectId/PhaseId/AssignedToId); drop any navigation
+        // loaded by another context so EF doesn't try to re-insert those rows.
         subtask.Project = null!;
         subtask.Phase = null;
+        subtask.AssignedTo = null;
 
         db.Subtasks.Add(subtask);
         await db.SaveChangesAsync();
