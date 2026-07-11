@@ -29,19 +29,27 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Margin="0,0,0,18">
-                <TextBlock
-                    FontFamily="Segoe UI Variable Display"
-                    FontSize="28"
-                    FontWeight="Bold"
-                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                    Text="Today" />
-                <TextBlock
-                    Margin="0,2,0,0"
-                    FontSize="13"
-                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                    Text="{Binding Source={x:Static sys:DateTime.Now}, StringFormat='{}{0:dddd, d MMMM}'}" />
-            </StackPanel>
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock x:Name="GreetingText" Style="{StaticResource PageHeading}" Text="Hello" />
+                    <TextBlock x:Name="SubheadingText" Style="{StaticResource PageSubheading}" />
+                </StackPanel>
+
+                <ui:Button
+                    Grid.Column="1"
+                    Padding="16,10"
+                    VerticalAlignment="Center"
+                    Appearance="Primary"
+                    Click="OnNewTask"
+                    Content="New Task"
+                    FontSize="14"
+                    Icon="{ui:SymbolIcon Add24}" />
+            </Grid>
 
             <!--  Quick add  -->
             <StackPanel Grid.Row="1" Margin="0,0,0,20">
@@ -51,15 +59,6 @@
                     BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="12">
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="16"
-                            Direction="270"
-                            Opacity="0.18"
-                            ShadowDepth="2"
-                            Color="Black" />
-                    </Border.Effect>
-
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -281,77 +280,44 @@
                     <StackPanel>
                         <!--  Today's Big 3, pinned above everything else  -->
                         <StackPanel Visibility="{Binding HasBigThree, Converter={StaticResource BoolToVisibility}}">
-                            <StackPanel Margin="2,0,0,10" Orientation="Horizontal">
-                                <ui:SymbolIcon
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
-                                    Symbol="Pin24" />
-                                <TextBlock
-                                    Margin="6,0,0,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="12"
-                                    FontWeight="SemiBold"
-                                    Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
-                                    Text="TODAY'S BIG 3" />
-                            </StackPanel>
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="TODAY'S BIG 3" />
 
                             <ItemsControl ItemsSource="{Binding BigThree}" />
 
                             <Border
                                 Height="1"
-                                Margin="0,6,0,4"
+                                Margin="0,6,0,14"
                                 Background="{DynamicResource CardStrokeColorDefaultBrush}" />
                         </StackPanel>
 
                         <!--  Active projects, shown as distinct cards  -->
                         <StackPanel Visibility="{Binding HasProjects, Converter={StaticResource BoolToVisibility}}">
-                            <StackPanel Margin="2,0,0,10" Orientation="Horizontal">
-                                <ui:SymbolIcon
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
-                                    Symbol="Folder24" />
-                                <TextBlock
-                                    Margin="6,0,0,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="12"
-                                    FontWeight="SemiBold"
-                                    Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
-                                    Text="PROJECTS" />
-                            </StackPanel>
+                            <TextBlock Style="{StaticResource SectionLabel}" Text="PROJECTS" />
 
                             <ItemsControl ItemsSource="{Binding TodayProjects}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:ProjectViewModel}">
-                                        <Border
+                                        <Button
                                             Margin="0,0,0,10"
-                                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="10">
-                                            <Border.Effect>
-                                                <DropShadowEffect
-                                                    BlurRadius="14"
-                                                    Direction="270"
-                                                    Opacity="0.16"
-                                                    ShadowDepth="2"
-                                                    Color="Black" />
-                                            </Border.Effect>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="4" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
+                                            Command="{Binding DataContext.OpenProjectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource CardButton}"
+                                            ToolTip="Open project">
+                                            <Border Style="{StaticResource Card}">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="4" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
 
-                                                <!--  Accent stripe marks a project apart from a task  -->
-                                                <Border
-                                                    Grid.Column="0"
-                                                    Background="{DynamicResource AccentFillColorDefaultBrush}"
-                                                    CornerRadius="9,0,0,9" />
+                                                    <!--  Accent stripe marks a project apart from a task  -->
+                                                    <Border
+                                                        Grid.Column="0"
+                                                        Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                                        CornerRadius="12,0,0,12" />
 
-                                                <StackPanel Grid.Column="1" Margin="14,12,12,12">
+                                                    <StackPanel Grid.Column="1" Margin="14,12,12,12">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock
                                                             FontSize="14"
@@ -430,17 +396,17 @@
                                                     </StackPanel>
                                                 </StackPanel>
 
-                                                <ui:Button
-                                                    Grid.Column="2"
-                                                    Margin="0,0,12,0"
-                                                    VerticalAlignment="Center"
-                                                    Appearance="Secondary"
-                                                    Command="{Binding DataContext.OpenProjectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                    CommandParameter="{Binding}"
-                                                    Content="Open"
-                                                    Icon="{ui:SymbolIcon Open24}" />
-                                            </Grid>
-                                        </Border>
+                                                    <!--  Chevron affordance — the whole card is clickable  -->
+                                                    <ui:SymbolIcon
+                                                        Grid.Column="2"
+                                                        Margin="0,0,14,0"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="18"
+                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                        Symbol="ChevronRight24" />
+                                                </Grid>
+                                            </Border>
+                                        </Button>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -459,10 +425,8 @@
                                         <DataTemplate>
                                             <TextBlock
                                                 Margin="2,10,0,10"
-                                                FontSize="12"
-                                                FontWeight="SemiBold"
-                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                Text="{Binding Name, StringFormat='{}{0} priority'}" />
+                                                Style="{StaticResource SectionLabel}"
+                                                Text="{Binding Name, StringFormat='{}{0} Priority'}" />
                                         </DataTemplate>
                                     </GroupStyle.HeaderTemplate>
                                 </GroupStyle>
