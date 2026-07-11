@@ -40,6 +40,18 @@ public class TaskItem
     /// <summary>When the stale-task nudge last asked about this task, so it asks at most once a day.</summary>
     public DateTime? LastNudgedAt { get; set; }
 
+    /// <summary>
+    /// Developer feature: a branch name or commit-message tag (e.g. "closes #42").
+    /// The git watcher auto-completes the task when a commit message contains it.
+    /// </summary>
+    public string? GitLink { get; set; }
+
+    /// <summary>
+    /// When set, completing the task spawns a fresh copy with its due date advanced
+    /// by one interval. The spawned copy carries the same recurrence, so it repeats.
+    /// </summary>
+    public RecurrenceKind Recurrence { get; set; } = RecurrenceKind.None;
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public DateTime? CompletedAt { get; set; }

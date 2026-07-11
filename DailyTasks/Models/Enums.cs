@@ -18,3 +18,12 @@ public enum InterruptionReason
     Message = 2,
     Person = 3,
 }
+
+/// <summary>How a task re-creates itself after completion.</summary>
+public enum RecurrenceKind
+{
+    None = 0,
+    Daily = 1,
+    Weekly = 2,
+    Monthly = 3,
+}
