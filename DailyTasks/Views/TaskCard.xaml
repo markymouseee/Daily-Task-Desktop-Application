@@ -126,6 +126,25 @@
                                 Text="{Binding Priority}" />
                         </StackPanel>
 
+                        <!--  Git link (developer feature)  -->
+                        <StackPanel
+                            Margin="10,0,0,0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Visibility="{Binding GitLink, Converter={StaticResource EmptyToVisibility}}">
+                            <ui:SymbolIcon
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Symbol="BranchFork24" />
+                            <TextBlock
+                                Margin="4,0,0,0"
+                                VerticalAlignment="Center"
+                                FontFamily="Cascadia Mono, Consolas"
+                                FontSize="11"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{Binding GitLink}" />
+                        </StackPanel>
+
                         <!--  Due date  -->
                         <StackPanel
                             Margin="10,0,0,0"
@@ -144,6 +163,24 @@
                                 FontSize="11"
                                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                 Text="{Binding DueDate, Converter={StaticResource DueDateToText}}" />
+                        </StackPanel>
+
+                        <!--  Recurrence  -->
+                        <StackPanel
+                            Margin="10,0,0,0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Visibility="{Binding IsRecurring, Converter={StaticResource BoolToVisibility}}">
+                            <ui:SymbolIcon
+                                FontSize="12"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Symbol="ArrowRepeatAll24" />
+                            <TextBlock
+                                Margin="4,0,0,0"
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                Text="{Binding RecurrenceLabel}" />
                         </StackPanel>
                     </StackPanel>
                 </StackPanel>

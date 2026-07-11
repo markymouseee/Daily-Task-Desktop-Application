@@ -57,18 +57,48 @@ public partial class TodayViewModel : TaskListViewModel
     [ObservableProperty]
     private string _staleMoreText = string.Empty;
 
+    [ObservableProperty]
+    private double _freeHoursToday;
+
+    [ObservableProperty]
+    private bool _showWorkloadWarning;
+
+    [ObservableProperty]
+    private string _workloadText = string.Empty;
+
     public TodayViewModel(
         ITaskService tasks,
         ICategoryService categories,
         SettingsService settings,
         FocusService focus,
-        ITaskEditor editor)
+        ITaskEditor editor,
+        GitWatcherService gitWatcher)
         : base(tasks, focus, editor)
     {
         _categories = categories;
         _settings = settings;
+        _freeHoursToday = settings.FreeHoursPerDay;
 
         tasks.TaskAdded += OnTaskAdded;
+        gitWatcher.TaskCompleted += OnTaskCompletedByCommit;
+    }
+
+    /// <summary>
+    /// The watcher works on its own task instances, so match by id, sync our copy,
+    /// and let the card leave the page.
+    /// </summary>
+    private void OnTaskCompletedByCommit(object? sender, TaskItem task)
+    {
+        var card = Items.Concat(BigThree).FirstOrDefault(i => i.Model.Id == task.Id);
+
+        if (card is null)
+        {
+            return;
+        }
+
+        card.Model.IsCompleted = true;
+        card.Model.CompletedAt = task.CompletedAt;
+        RemoveItem(card);
     }
 
     public override string EmptyMessage => "Nothing due today. Add a task above to get started.";
@@ -150,6 +180,43 @@ public partial class TodayViewModel : TaskListViewModel
     {
         IsEmpty = Items.Count == 0 && BigThree.Count == 0;
         HasBigThree = BigThree.Count > 0;
+        RecomputeWorkload();
+    }
+
+    // ---- task/time mismatch warning ----
+
+    partial void OnFreeHoursTodayChanged(double value)
+    {
+        _settings.FreeHoursPerDay = value;
+        RecomputeWorkload();
+    }
+
+    private void RecomputeWorkload()
+    {
+        var plannedMinutes = Items.Concat(BigThree).Sum(i => i.Model.EstimatedMinutes ?? 0);
+        var freeMinutes = FreeHoursToday * 60;
+
+        ShowWorkloadWarning = plannedMinutes > 0 && plannedMinutes > freeMinutes;
+
+        if (ShowWorkloadWarning)
+        {
+            WorkloadText =
+                $"Today's estimates add up to {FormatMinutes(plannedMinutes)}, "
+                + $"but you have {FormatMinutes((int)freeMinutes)} free. Something may need to move.";
+        }
+    }
+
+    private static string FormatMinutes(int minutes)
+    {
+        var hours = minutes / 60;
+        var mins = minutes % 60;
+
+        return (hours, mins) switch
+        {
+            (0, _) => $"{mins}m",
+            (_, 0) => $"{hours}h",
+            _ => $"{hours}h {mins}m",
+        };
     }
 
     // ---- quick add ----

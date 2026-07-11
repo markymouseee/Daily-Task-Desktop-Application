@@ -31,6 +31,20 @@ public partial class TaskItemViewModel : ObservableObject
 
     public string? ContextResumeNote => Model.ContextResumeNote;
 
+    public string? GitLink => Model.GitLink;
+
+    public RecurrenceKind Recurrence => Model.Recurrence;
+
+    public bool IsRecurring => Model.Recurrence != RecurrenceKind.None;
+
+    public string RecurrenceLabel => Model.Recurrence switch
+    {
+        RecurrenceKind.Daily => "Daily",
+        RecurrenceKind.Weekly => "Weekly",
+        RecurrenceKind.Monthly => "Monthly",
+        _ => string.Empty,
+    };
+
     public string CategoryName => Model.Category.Name;
 
     public string CategoryColor => Model.Category.ColorHex;

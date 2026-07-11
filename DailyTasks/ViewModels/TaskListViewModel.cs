@@ -108,7 +108,15 @@ public abstract partial class TaskListViewModel(ITaskService tasks, FocusService
             return;
         }
 
-        await Tasks.UpdateAsync(item.Model);
+        // Completing may spawn a recurrence; un-completing is a plain update.
+        if (item.Model.IsCompleted)
+        {
+            await Tasks.CompleteAsync(item.Model);
+        }
+        else
+        {
+            await Tasks.UpdateAsync(item.Model);
+        }
 
         // A task that no longer belongs on this page leaves it (e.g. ticking a
         // task on Today, or unticking one on Completed).

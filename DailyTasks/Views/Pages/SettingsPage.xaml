@@ -97,6 +97,89 @@
                     <ui:SymbolIcon
                         VerticalAlignment="Center"
                         FontSize="20"
+                        Symbol="Hourglass24" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="Free hours per day" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="Default used to warn when today's estimates overflow the day." />
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardControl.Header>
+
+            <ui:NumberBox
+                Width="130"
+                LargeChange="1"
+                Maximum="24"
+                Minimum="0"
+                SmallChange="0.5"
+                SpinButtonPlacementMode="Inline"
+                Value="{Binding FreeHoursPerDay}" />
+        </ui:CardControl>
+
+        <ui:CardControl Margin="0,0,0,10">
+            <ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="20"
+                        Symbol="Code24" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="Enable developer features" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="Git links on tasks, plus a commit watcher that closes them for you." />
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardControl.Header>
+
+            <ui:ToggleSwitch IsChecked="{Binding DeveloperFeaturesEnabled}" />
+        </ui:CardControl>
+
+        <ui:CardControl
+            Margin="0,0,0,10"
+            Visibility="{Binding DeveloperFeaturesEnabled, Converter={StaticResource BoolToVisibility}}">
+            <ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="20"
+                        Symbol="BranchFork24" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="Repository to watch" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="{Binding GitRepoStatus}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardControl.Header>
+
+            <ui:TextBox
+                Width="280"
+                FontFamily="Cascadia Mono, Consolas"
+                PlaceholderText="C:\src\my-project"
+                Text="{Binding GitRepoPath, UpdateSourceTrigger=PropertyChanged}" />
+        </ui:CardControl>
+
+        <ui:CardControl Margin="0,0,0,10">
+            <ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="20"
                         Symbol="Flash24" />
                     <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
                         <TextBlock

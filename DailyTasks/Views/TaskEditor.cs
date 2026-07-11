@@ -4,11 +4,14 @@ using DailyTasks.Services;
 
 namespace DailyTasks.Views;
 
-public sealed class TaskEditor(ITaskService tasks) : ITaskEditor
+public sealed class TaskEditor(ITaskService tasks, SettingsService settings) : ITaskEditor
 {
     public async Task<bool> EditAsync(TaskItem task)
     {
-        var window = new EditTaskWindow(task) { Owner = Application.Current.MainWindow };
+        var window = new EditTaskWindow(task, settings.DeveloperFeaturesEnabled)
+        {
+            Owner = Application.Current.MainWindow,
+        };
 
         if (window.ShowDialog() != true)
         {

@@ -48,8 +48,36 @@
             Margin="0,14,0,6"
             FontSize="12"
             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+            Text="Repeats — a new copy is created when you complete it" />
+        <ComboBox
+            x:Name="RecurrenceBox"
+            HorizontalAlignment="Left"
+            Width="200"
+            SelectedIndex="0">
+            <ComboBoxItem Content="Does not repeat" />
+            <ComboBoxItem Content="Daily" />
+            <ComboBoxItem Content="Weekly" />
+            <ComboBoxItem Content="Monthly" />
+        </ComboBox>
+
+        <TextBlock
+            Margin="0,14,0,6"
+            FontSize="12"
+            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
             Text="Where you left off" />
         <ui:TextBox x:Name="ResumeBox" PlaceholderText="was debugging the auth token refresh, check line 84" />
+
+        <StackPanel x:Name="GitRow">
+            <TextBlock
+                Margin="0,14,0,6"
+                FontSize="12"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="Git link — completes this task when a commit message contains it" />
+            <ui:TextBox
+                x:Name="GitBox"
+                FontFamily="Cascadia Mono, Consolas"
+                PlaceholderText="closes #42  ·  feature/auth-refresh" />
+        </StackPanel>
 
         <StackPanel
             Margin="0,20,0,0"
