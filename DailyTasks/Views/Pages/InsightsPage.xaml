@@ -8,19 +8,13 @@
     Title="Insights">
 
     <Page.Resources>
-        <Style x:Key="InsightCard" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
-            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
+        <!--  Inherits the shared flat Card look, adding this page's padding/margin.  -->
+        <Style
+            x:Key="InsightCard"
+            BasedOn="{StaticResource Card}"
+            TargetType="Border">
             <Setter Property="Padding" Value="20" />
             <Setter Property="Margin" Value="0,0,0,14" />
-        </Style>
-
-        <Style x:Key="CardTitle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
         </Style>
     </Page.Resources>
 
@@ -32,11 +26,8 @@
 
         <TextBlock
             Grid.Row="0"
-            Margin="0,0,0,18"
-            FontFamily="Segoe UI Variable Display"
-            FontSize="28"
-            FontWeight="Bold"
-            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+            Margin="0,0,0,20"
+            Style="{StaticResource PageHeading}"
             Text="Insights" />
 
         <ScrollViewer

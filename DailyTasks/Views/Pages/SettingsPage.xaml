@@ -6,13 +6,63 @@
     Title="Settings">
 
     <StackPanel Margin="28,16,28,0">
+        <TextBlock Style="{StaticResource PageHeading}" Text="Settings" />
         <TextBlock
-            Margin="0,0,0,18"
-            FontFamily="Segoe UI Variable Display"
-            FontSize="28"
-            FontWeight="Bold"
-            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-            Text="Settings" />
+            Margin="0,3,0,18"
+            Style="{StaticResource PageSubheading}"
+            Text="Preferences, appearance, and developer options." />
+
+        <ui:CardControl Margin="0,0,0,10">
+            <ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="20"
+                        Symbol="Person24" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="Your name" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="Used for the greeting and your sidebar avatar." />
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardControl.Header>
+
+            <ui:TextBox
+                Width="220"
+                PlaceholderText="Mark"
+                Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}" />
+        </ui:CardControl>
+
+        <ui:CardControl Margin="0,0,0,10">
+            <ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="20"
+                        Symbol="People24" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="Team" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="Add the people you assign project subtasks to." />
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardControl.Header>
+
+            <ui:Button
+                Command="{Binding ManageTeamCommand}"
+                Content="Manage team…"
+                Icon="{ui:SymbolIcon PeopleTeam24}" />
+        </ui:CardControl>
 
         <ui:CardControl Margin="0,0,0,10">
             <ui:CardControl.Header>

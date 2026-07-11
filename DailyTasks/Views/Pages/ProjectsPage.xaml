@@ -12,19 +12,7 @@
             <Border
                 Margin="0,0,0,12"
                 Padding="16,14"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="10">
-                <Border.Effect>
-                    <DropShadowEffect
-                        BlurRadius="14"
-                        Direction="270"
-                        Opacity="0.16"
-                        ShadowDepth="2"
-                        Color="Black" />
-                </Border.Effect>
-
+                Style="{StaticResource Card}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -143,16 +131,9 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
+                <TextBlock Style="{StaticResource PageHeading}" Text="Projects" />
                 <TextBlock
-                    FontFamily="Segoe UI Variable Display"
-                    FontSize="28"
-                    FontWeight="Bold"
-                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                    Text="Projects" />
-                <TextBlock
-                    Margin="0,2,0,0"
-                    FontSize="13"
-                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Style="{StaticResource PageSubheading}"
                     Text="Plan real work with phases, subtasks and methodology-aware gating." />
             </StackPanel>
 
