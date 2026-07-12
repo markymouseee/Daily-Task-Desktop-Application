@@ -6,7 +6,7 @@
     xmlns:views="clr-namespace:DailyTasks.Views"
     Title="Gantt">
 
-    <Grid Margin="28,16,28,20">
+    <Grid Margin="28,16,28,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -20,26 +20,27 @@
 
             <StackPanel Grid.Column="0">
                 <TextBlock Style="{StaticResource PageHeading}" Text="Gantt" />
-                <TextBlock Style="{StaticResource PageSubheading}" Text="Visualize a project's phases and subtasks on a timeline." />
+                <TextBlock Style="{StaticResource PageSubheading}" Text="Timelines for your methodology-organized tasks." />
             </StackPanel>
 
             <StackPanel
                 Grid.Column="1"
                 VerticalAlignment="Center"
-                Orientation="Horizontal"
-                Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
-                <TextBlock
-                    Margin="0,0,10,0"
-                    VerticalAlignment="Center"
-                    FontSize="13"
-                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                    Text="Project" />
+                Orientation="Horizontal">
                 <ComboBox
                     MinWidth="220"
                     VerticalAlignment="Center"
-                    DisplayMemberPath="TaskItem.Title"
+                    DisplayMemberPath="Title"
                     ItemsSource="{Binding Projects}"
-                    SelectedItem="{Binding SelectedProject}" />
+                    SelectedItem="{Binding SelectedProject}"
+                    Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}" />
+                <ui:Button
+                    Margin="10,0,0,0"
+                    Padding="14,9"
+                    Appearance="Primary"
+                    Command="{Binding NewProjectCommand}"
+                    Content="New project"
+                    Icon="{ui:SymbolIcon Add24}" />
             </StackPanel>
         </Grid>
 
@@ -62,7 +63,7 @@
                 Margin="0,12,0,0"
                 HorizontalAlignment="Center"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="No projects yet. Create one to see its timeline." />
+                Text="No organized tasks yet. Add subtasks to a task, then use Organize as… to give it a methodology." />
         </StackPanel>
     </Grid>
 </Page>
