@@ -47,7 +47,7 @@
                     <ui:Button
                         Padding="16,10"
                         Appearance="Primary"
-                        Click="OnNewTask"
+                        Command="{Binding NewTaskCommand}"
                         Content="New Task"
                         FontSize="14"
                         Icon="{ui:SymbolIcon Add24}" />
@@ -62,7 +62,7 @@
                         <ui:Button.ContextMenu>
                             <ContextMenu>
                                 <MenuItem
-                                    Command="{Binding PlacementTarget.DataContext.NewProjectFromMenuCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                    Command="{Binding PlacementTarget.DataContext.NewProjectCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                     Header="New project…" />
                                 <MenuItem
                                     Command="{Binding PlacementTarget.DataContext.ManageTeamCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
@@ -82,13 +82,32 @@
                     Padding="8,10"
                     VerticalAlignment="Center"
                     FontSize="14"
-                    Icon="{ui:SymbolIcon Search24}"
-                    PlaceholderText="Quick add a task…"
+                    Icon="{ui:SymbolIcon Add24}"
+                    PlaceholderText="Add a task and press Enter — try “call dentist tomorrow 3pm high priority”"
                     Text="{Binding NewTaskTitle, UpdateSourceTrigger=PropertyChanged}">
                     <ui:TextBox.InputBindings>
                         <KeyBinding Key="Enter" Command="{Binding AddTaskCommand}" />
                     </ui:TextBox.InputBindings>
                 </ui:TextBox>
+
+                <!--  Live echo of what the natural-language parser understood  -->
+                <StackPanel
+                    Margin="12,8,0,0"
+                    Orientation="Horizontal"
+                    Visibility="{Binding ParsePreview, Converter={StaticResource EmptyToVisibility}}">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                        Symbol="Sparkle24" />
+                    <TextBlock
+                        Margin="6,0,0,0"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{Binding ParsePreview}"
+                        TextTrimming="CharacterEllipsis" />
+                </StackPanel>
 
                 <!--  Stale-task nudge  -->
                 <Border
@@ -260,133 +279,6 @@
                             <Border
                                 Height="1"
                                 Margin="0,6,0,14"
-                                Background="{DynamicResource CardStrokeColorDefaultBrush}" />
-                        </StackPanel>
-
-                        <!--  Active projects, shown as distinct cards  -->
-                        <StackPanel Visibility="{Binding HasProjects, Converter={StaticResource BoolToVisibility}}">
-                            <TextBlock Style="{StaticResource SectionLabel}" Text="PROJECTS" />
-
-                            <ItemsControl ItemsSource="{Binding TodayProjects}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type vm:ProjectViewModel}">
-                                        <Button
-                                            Margin="0,0,0,10"
-                                            Command="{Binding DataContext.OpenProjectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                            CommandParameter="{Binding}"
-                                            Style="{StaticResource CardButton}"
-                                            ToolTip="Open project">
-                                            <Border Style="{StaticResource Card}">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="4" />
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <!--  Accent stripe marks a project apart from a task  -->
-                                                    <Border
-                                                        Grid.Column="0"
-                                                        Background="{DynamicResource AccentFillColorDefaultBrush}"
-                                                        CornerRadius="12,0,0,12" />
-
-                                                    <StackPanel Grid.Column="1" Margin="14,12,12,12">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock
-                                                            FontSize="14"
-                                                            FontWeight="SemiBold"
-                                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                                            Text="{Binding Title}"
-                                                            TextTrimming="CharacterEllipsis" />
-                                                        <Border
-                                                            Margin="10,1,0,0"
-                                                            Padding="7,1"
-                                                            VerticalAlignment="Center"
-                                                            Background="{DynamicResource AccentFillColorDefaultBrush}"
-                                                            CornerRadius="7">
-                                                            <TextBlock
-                                                                FontSize="10"
-                                                                FontWeight="SemiBold"
-                                                                Foreground="White"
-                                                                Text="{Binding MethodologyBadge}" />
-                                                        </Border>
-                                                        <Border
-                                                            Margin="6,1,0,0"
-                                                            Padding="7,1"
-                                                            VerticalAlignment="Center"
-                                                            Background="#33EF4444"
-                                                            CornerRadius="7"
-                                                            Visibility="{Binding BlockedCount, Converter={StaticResource PositiveToVisibility}}">
-                                                            <TextBlock
-                                                                FontSize="10"
-                                                                FontWeight="SemiBold"
-                                                                Foreground="#EF4444"
-                                                                Text="{Binding BlockedText}" />
-                                                        </Border>
-                                                    </StackPanel>
-
-                                                    <!--  Overall progress  -->
-                                                    <Border
-                                                        x:Name="TodayProjTrack"
-                                                        Height="6"
-                                                        Margin="0,8,0,0"
-                                                        Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                                                        ClipToBounds="True"
-                                                        CornerRadius="3">
-                                                        <Border
-                                                            HorizontalAlignment="Left"
-                                                            Background="{Binding ProgressFraction, Converter={StaticResource ProgressToBrush}}"
-                                                            CornerRadius="3">
-                                                            <Border.Width>
-                                                                <MultiBinding Converter="{StaticResource FractionOfWidth}">
-                                                                    <Binding Path="ProgressFraction" />
-                                                                    <Binding ElementName="TodayProjTrack" Path="ActualWidth" />
-                                                                </MultiBinding>
-                                                            </Border.Width>
-                                                        </Border>
-                                                    </Border>
-
-                                                    <TextBlock
-                                                        Margin="0,5,0,0"
-                                                        FontSize="11"
-                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                        Text="{Binding ProgressText}" />
-
-                                                    <!--  Only the next actionable subtask, to avoid clutter  -->
-                                                    <StackPanel Margin="0,6,0,0" Orientation="Horizontal">
-                                                        <ui:SymbolIcon
-                                                            VerticalAlignment="Center"
-                                                            FontSize="12"
-                                                            Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
-                                                            Symbol="ArrowRight24" />
-                                                        <TextBlock
-                                                            Margin="5,0,0,0"
-                                                            VerticalAlignment="Center"
-                                                            FontSize="12"
-                                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                            Text="{Binding CurrentActionableTitle}"
-                                                            TextTrimming="CharacterEllipsis" />
-                                                    </StackPanel>
-                                                </StackPanel>
-
-                                                    <!--  Chevron affordance — the whole card is clickable  -->
-                                                    <ui:SymbolIcon
-                                                        Grid.Column="2"
-                                                        Margin="0,0,14,0"
-                                                        VerticalAlignment="Center"
-                                                        FontSize="18"
-                                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                                        Symbol="ChevronRight24" />
-                                                </Grid>
-                                            </Border>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-
-                            <Border
-                                Height="1"
-                                Margin="0,2,0,10"
                                 Background="{DynamicResource CardStrokeColorDefaultBrush}" />
                         </StackPanel>
 
