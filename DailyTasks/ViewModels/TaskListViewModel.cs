@@ -7,12 +7,12 @@ using DailyTasks.Services;
 namespace DailyTasks.ViewModels;
 
 /// <summary>
-/// Shared behaviour for the Today / All Tasks / Completed pages. Subclasses decide
-/// which tasks they show via <see cref="Includes"/>; grouping and sorting are left
-/// to each page's XAML.
+/// Shared behaviour for the Today / All Tasks / Completed pages. Shows top-level tasks as
+/// recursive cards and hosts their actions. Subclasses decide which roots to show via
+/// <see cref="Includes"/>; grouping/sorting live in each page's XAML.
 /// </summary>
-public abstract partial class TaskListViewModel(ITaskService tasks, FocusService focus, ITaskEditor editor)
-    : ObservableObject
+public abstract partial class TaskListViewModel(ITaskService tasks, FocusService focus, ITaskEditor editor, ITaskCoordinator coordinator)
+    : ObservableObject, ITaskCardHost
 {
     [ObservableProperty]
     private bool _isEmpty = true;
@@ -23,7 +23,6 @@ public abstract partial class TaskListViewModel(ITaskService tasks, FocusService
 
     public ObservableCollection<TaskItemViewModel> Items { get; } = [];
 
-    /// <summary>Shown when the page has no tasks to display.</summary>
     public abstract string EmptyMessage { get; }
 
     protected abstract bool Includes(TaskItem task);
@@ -32,97 +31,159 @@ public abstract partial class TaskListViewModel(ITaskService tasks, FocusService
     {
         ClearAll();
 
-        var all = await Tasks.GetAllAsync();
+        var roots = await Tasks.GetRootsAsync();
 
-        foreach (var task in all)
+        foreach (var root in roots)
         {
-            if (Includes(task))
+            if (Includes(root))
             {
-                AddItem(new TaskItemViewModel(task));
+                AddItem(new TaskItemViewModel(root, this));
             }
         }
 
         UpdateEmpty();
-        await AfterLoadAsync(all);
+        await AfterLoadAsync(roots);
     }
 
-    protected virtual void ClearAll()
-    {
-        foreach (var item in Items)
-        {
-            Detach(item);
-        }
-
-        Items.Clear();
-    }
+    protected virtual void ClearAll() => Items.Clear();
 
     protected virtual void AddItem(TaskItemViewModel item)
     {
-        Attach(item);
         Items.Add(item);
         UpdateEmpty();
     }
 
     protected virtual void RemoveItem(TaskItemViewModel item)
     {
-        Detach(item);
         Items.Remove(item);
         UpdateEmpty();
     }
 
     protected virtual void UpdateEmpty() => IsEmpty = Items.Count == 0;
 
-    /// <summary>
-    /// Runs at the end of every load with the full unfiltered task list; Today
-    /// uses it for the Big 3 ritual and the stale-task nudge.
-    /// </summary>
-    protected virtual Task AfterLoadAsync(IReadOnlyList<TaskItem> allTasks) => Task.CompletedTask;
+    /// <summary>Runs at the end of every load with the top-level roots.</summary>
+    protected virtual Task AfterLoadAsync(IReadOnlyList<TaskItem> roots) => Task.CompletedTask;
 
-    protected void Attach(TaskItemViewModel item) => item.CompletionChanged += OnCompletionChanged;
-
-    protected void Detach(TaskItemViewModel item) => item.CompletionChanged -= OnCompletionChanged;
-
+    /// <summary>New-task dialog, then refresh the list.</summary>
     [RelayCommand]
-    private Task StartFocusAsync(TaskItemViewModel item) => Focus.StartAsync(item.Model);
-
-    [RelayCommand]
-    private async Task EditAsync(TaskItemViewModel item)
+    private async Task NewTask()
     {
-        if (await editor.EditAsync(item.Model))
+        if (await coordinator.CreateTaskAsync())
         {
-            item.Refresh();
+            await LoadAsync();
         }
     }
 
+    /// <summary>New-project flow (name → methodology → detail), then refresh the list.</summary>
     [RelayCommand]
-    private async Task DeleteAsync(TaskItemViewModel item)
+    private async Task NewProject()
     {
-        await Tasks.DeleteAsync(item.Model);
-        RemoveItem(item);
+        await coordinator.CreateProjectAsync();
+        await LoadAsync();
     }
 
-    private async void OnCompletionChanged(object? sender, EventArgs e)
+    // ---- ITaskCardHost ----
+
+    public Task StartFocusAsync(TaskItemViewModel node) => Focus.StartAsync(node.Model);
+
+    public async Task EditAsync(TaskItemViewModel node)
     {
-        if (sender is not TaskItemViewModel item)
+        if (await editor.EditAsync(node.Model))
+        {
+            node.Refresh();
+            RefreshAncestors(node);
+        }
+    }
+
+    public async Task DeleteAsync(TaskItemViewModel node)
+    {
+        await Tasks.DeleteAsync(node.Model);
+        RemoveNode(node);
+    }
+
+    public async Task AddChildAsync(TaskItemViewModel node, string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
         {
             return;
         }
 
-        // Completing may spawn a recurrence; un-completing is a plain update.
-        if (item.Model.IsCompleted)
+        var child = new TaskItem
         {
-            await Tasks.CompleteAsync(item.Model);
+            Title = title.Trim(),
+            CategoryId = node.Model.CategoryId,
+            Category = node.Model.Category,
+            ParentTaskId = node.Model.Id,
+            Priority = TaskPriority.Medium,
+        };
+
+        await Tasks.AddAsync(child);
+
+        node.Model.Children.Add(child);
+        node.Children.Add(new TaskItemViewModel(child, this, node.Depth + 1) { ParentNode = node });
+        node.IsExpanded = true;
+
+        node.RefreshRollup();
+        RefreshAncestors(node);
+    }
+
+    public virtual async Task OrganizeAsync(TaskItemViewModel node)
+    {
+        if (await coordinator.OrganizeAsync(node.Model))
+        {
+            await LoadAsync();
+        }
+    }
+
+    public virtual async Task OpenDetailAsync(TaskItemViewModel node)
+    {
+        await coordinator.OpenDetailAsync(node.Model.Id);
+        await LoadAsync();
+    }
+
+    public async Task ChangedAsync(TaskItemViewModel node)
+    {
+        // Recurrence only spawns for top-level tasks; children are a plain update.
+        if (node.Model.IsCompleted && node.ParentNode is null)
+        {
+            await Tasks.CompleteAsync(node.Model);
         }
         else
         {
-            await Tasks.UpdateAsync(item.Model);
+            await Tasks.UpdateAsync(node.Model);
         }
 
-        // A task that no longer belongs on this page leaves it (e.g. ticking a
-        // task on Today, or unticking one on Completed).
-        if (!Includes(item.Model))
+        RefreshAncestors(node);
+
+        // A root that no longer belongs on this page leaves it.
+        if (node.ParentNode is null && !Includes(node.Model))
         {
-            RemoveItem(item);
+            RemoveItem(node);
+        }
+    }
+
+    private void RemoveNode(TaskItemViewModel node)
+    {
+        if (node.ParentNode is { } parent)
+        {
+            parent.Children.Remove(node);
+            parent.Model.Children.Remove(node.Model);
+            parent.RefreshRollup();
+            RefreshAncestors(parent);
+        }
+        else
+        {
+            RemoveItem(node);
+        }
+    }
+
+    protected static void RefreshAncestors(TaskItemViewModel node)
+    {
+        var ancestor = node.ParentNode;
+        while (ancestor is not null)
+        {
+            ancestor.RefreshRollup();
+            ancestor = ancestor.ParentNode;
         }
     }
 }

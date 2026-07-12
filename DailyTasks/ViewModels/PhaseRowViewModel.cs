@@ -6,24 +6,20 @@ using DailyTasks.Services;
 namespace DailyTasks.ViewModels;
 
 /// <summary>
-/// One phase section in the project detail view: its subtasks plus a mini progress
-/// bar that shows completed (green) and blocked (red) proportions.
+/// One phase section in the detail view: its child-task cards plus a mini progress bar
+/// showing completed (green) and blocked (red) proportions.
 /// </summary>
 public partial class PhaseRowViewModel : ObservableObject
 {
-    public PhaseRowViewModel(
-        Phase phase,
-        IEnumerable<SubtaskViewModel> subtasks,
-        string? displayName = null,
-        int? iterationNumber = null)
+    public PhaseRowViewModel(Phase phase, IEnumerable<TaskItemViewModel> tasks, string? displayName = null, int? iterationNumber = null)
     {
         Phase = phase;
         DisplayName = displayName ?? phase.Name;
         IterationNumber = iterationNumber;
 
-        foreach (var s in subtasks)
+        foreach (var t in tasks)
         {
-            Subtasks.Add(s);
+            Tasks.Add(t);
         }
 
         Recompute();
@@ -35,15 +31,14 @@ public partial class PhaseRowViewModel : ObservableObject
 
     public string Name => Phase.Name;
 
-    /// <summary>The header text — the phase name, or "Iteration N · Phase" for Iterative.</summary>
     public string DisplayName { get; }
 
-    /// <summary>Set only for Iterative sections; null otherwise.</summary>
     public int? IterationNumber { get; }
 
-    public int Order => Phase.Order;
+    public ObservableCollection<TaskItemViewModel> Tasks { get; } = [];
 
-    public ObservableCollection<SubtaskViewModel> Subtasks { get; } = [];
+    [ObservableProperty]
+    private string _newTaskTitle = string.Empty;
 
     [ObservableProperty]
     private bool _isLocked;
@@ -54,31 +49,21 @@ public partial class PhaseRowViewModel : ObservableObject
     [ObservableProperty]
     private double _blockedFraction;
 
-    /// <summary>The untouched remainder of the bar (1 − done − blocked), never negative.</summary>
-    [ObservableProperty]
-    private double _remainingFraction;
-
     [ObservableProperty]
     private int _percent;
 
     [ObservableProperty]
     private string _progressText = string.Empty;
 
-    [ObservableProperty]
-    private bool _isComplete;
-
-    /// <summary>Recomputes the bar and lock state from the current subtask statuses.</summary>
     public void Recompute()
     {
         IsLocked = Phase.IsLocked;
 
-        var progress = Progress.Of(Subtasks.Select(s => s.Model));
+        var progress = Progress.Of(Tasks.Select(t => t.Model));
 
         DoneFraction = progress.Fraction;
         BlockedFraction = progress.Total == 0 ? 0 : (double)progress.Blocked / progress.Total;
-        RemainingFraction = Math.Max(0, 1 - DoneFraction - BlockedFraction);
         Percent = progress.Percent;
-        IsComplete = progress.IsComplete;
 
         ProgressText = progress.Total == 0
             ? "Empty"

@@ -45,13 +45,16 @@ public partial class TaskItemViewModel : ObservableObject
 
         foreach (var child in model.Children.OrderByDescending(c => c.Priority).ThenBy(c => c.CreatedAt))
         {
-            Children.Add(new TaskItemViewModel(child, host, depth + 1));
+            Children.Add(new TaskItemViewModel(child, host, depth + 1) { ParentNode = this });
         }
     }
 
     public TaskItem Model { get; }
 
     public int Depth { get; }
+
+    /// <summary>The parent card, or null at the top level. Used to bubble rollup refreshes.</summary>
+    public TaskItemViewModel? ParentNode { get; set; }
 
     public ObservableCollection<TaskItemViewModel> Children { get; } = [];
 

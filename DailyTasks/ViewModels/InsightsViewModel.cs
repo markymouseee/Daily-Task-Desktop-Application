@@ -56,7 +56,8 @@ public partial class InsightsViewModel(ITaskService tasks, IInterruptionService 
 
         await LoadInterruptionsAsync(weekStart);
 
-        var all = await tasks.GetAllAsync();
+        var roots = await tasks.GetRootsAsync();
+        var all = roots.SelectMany(r => TaskTree.Descendants(r).Prepend(r)).ToList();
         BuildHeatmap(all);
         BuildCategorySlices(all, weekStart);
     }

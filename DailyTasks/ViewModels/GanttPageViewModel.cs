@@ -1,18 +1,19 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using DailyTasks.Models;
 using DailyTasks.Services;
 
 namespace DailyTasks.ViewModels;
 
 /// <summary>
-/// The standalone Gantt page: pick a project and see its timeline. Clicking a bar opens
-/// that project's detail. A thin shell over the shared <see cref="GanttViewModel"/>.
+/// The Gantt hub: pick any methodology-organized task and see its timeline. Clicking a bar
+/// opens that task's detail window.
 /// </summary>
-public partial class GanttPageViewModel(IProjectService projects, IProjectCoordinator coordinator) : ObservableObject
+public partial class GanttPageViewModel(ITaskService tasks, ITaskCoordinator coordinator) : ObservableObject
 {
     [ObservableProperty]
-    private Project? _selectedProject;
+    private TaskItem? _selectedProject;
 
     [ObservableProperty]
     private GanttViewModel? _gantt;
@@ -20,28 +21,41 @@ public partial class GanttPageViewModel(IProjectService projects, IProjectCoordi
     [ObservableProperty]
     private bool _isEmpty = true;
 
-    public ObservableCollection<Project> Projects { get; } = [];
+    public ObservableCollection<TaskItem> Projects { get; } = [];
 
     public async Task LoadAsync()
     {
-        var current = SelectedProject?.Id;
-
         Projects.Clear();
-        foreach (var project in await projects.GetAllAsync())
+
+        var roots = await tasks.GetRootsAsync();
+        var organized = roots
+            .SelectMany(r => TaskTree.Descendants(r).Prepend(r))
+            .Where(t => t.Methodology is not null)
+            .OrderBy(t => t.Title);
+
+        foreach (var task in organized)
         {
-            Projects.Add(project);
+            Projects.Add(task);
         }
 
         IsEmpty = Projects.Count == 0;
-        SelectedProject = Projects.FirstOrDefault(p => p.Id == current) ?? Projects.FirstOrDefault();
+        SelectedProject = Projects.FirstOrDefault();
     }
 
-    partial void OnSelectedProjectChanged(Project? value) =>
-        Gantt = value is null ? null : new GanttViewModel(value, _ => OpenDetail(value.Id));
-
-    private async void OpenDetail(int projectId)
+    [RelayCommand]
+    private async Task NewProject()
     {
-        await coordinator.OpenDetailAsync(projectId);
-        await LoadAsync(); // dates/assignees may have changed
+        var id = await coordinator.CreateProjectAsync();
+        await LoadAsync();
+
+        if (id is { } newId)
+        {
+            SelectedProject = Projects.FirstOrDefault(p => p.Id == newId) ?? SelectedProject;
+        }
     }
+
+    partial void OnSelectedProjectChanged(TaskItem? value) =>
+        Gantt = value is null
+            ? null
+            : new GanttViewModel(value, taskId => { _ = coordinator.OpenDetailAsync(value.Id); });
 }

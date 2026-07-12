@@ -7,24 +7,17 @@ using DailyTasks.Services;
 
 namespace DailyTasks.ViewModels;
 
-/// <summary>
-/// A single Gantt row, pre-computed into pixel coordinates so the XAML Canvas only has to
-/// bind Left/Top/Width. Every phase is a header row followed by its subtask rows — the same
-/// grouping the List and Excel views use.
-/// </summary>
+/// <summary>One Gantt row, pre-computed into pixel coordinates.</summary>
 public sealed class GanttBarRow
 {
     public required string Label { get; init; }
 
-    /// <summary>Y of the row's label and bar (absolute, within the chart body).</summary>
     public required double Top { get; init; }
 
     public bool IsPhase { get; init; }
 
-    /// <summary>The subtask this row represents (subtask rows only), for List-view sync.</summary>
-    public int? SubtaskId { get; init; }
+    public int? TaskId { get; init; }
 
-    /// <summary>Left indent for the label, so subtask rows sit under their phase.</summary>
     public double Indent { get; init; }
 
     public bool HasBar { get; init; }
@@ -35,7 +28,7 @@ public sealed class GanttBarRow
 
     public double BarWidth { get; init; }
 
-    public SubtaskStatus Status { get; init; }
+    public WorkStatus Status { get; init; }
 
     public double BarOpacity { get; init; } = 1;
 
@@ -43,7 +36,6 @@ public sealed class GanttBarRow
 
     public double BlockedWidth { get; init; }
 
-    // Assignee (subtask rows).
     public bool HasAssignee { get; init; }
 
     public string AssigneeName { get; init; } = string.Empty;
@@ -53,7 +45,6 @@ public sealed class GanttBarRow
     public string AssigneeColor { get; init; } = "#64748B";
 }
 
-/// <summary>A week/month column header / gridline at a pixel offset.</summary>
 public sealed class GanttColumn
 {
     public required string Label { get; init; }
@@ -61,15 +52,14 @@ public sealed class GanttColumn
     public required double X { get; init; }
 }
 
-/// <summary>A dependency elbow between two phase bars (Waterfall).</summary>
 public sealed class GanttConnector
 {
     public required PointCollection Points { get; init; }
 }
 
 /// <summary>
-/// Turns a project's phases and subtasks into one continuous set of drawable Gantt rows
-/// plus timeline chrome (columns, today marker, dependency connectors). Owns the interactive
+/// Turns a methodology-organized task's phases and child tasks into one continuous set of
+/// Gantt rows plus timeline chrome (columns, today marker, dependency connectors). Owns the
 /// zoom state; clicking a subtask bar calls back to sync the List view.
 /// </summary>
 public partial class GanttViewModel : ObservableObject
@@ -90,17 +80,17 @@ public partial class GanttViewModel : ObservableObject
         (44, GanttColumnUnit.Week, "Day"),
     ];
 
-    private readonly Project _project;
+    private readonly TaskItem _head;
     private readonly bool _isWaterfall;
-    private readonly Action<int>? _onSubtaskActivated;
+    private readonly Action<int>? _onTaskActivated;
 
-    private int _zoomIndex = 2; // Week
+    private int _zoomIndex = 2;
 
-    public GanttViewModel(Project project, Action<int>? onSubtaskActivated = null)
+    public GanttViewModel(TaskItem head, Action<int>? onTaskActivated = null)
     {
-        _project = project;
-        _isWaterfall = project.Methodology == Methodology.Waterfall;
-        _onSubtaskActivated = onSubtaskActivated;
+        _head = head;
+        _isWaterfall = head.Methodology == Methodology.Waterfall;
+        _onTaskActivated = onTaskActivated;
         Rebuild();
     }
 
@@ -128,8 +118,6 @@ public partial class GanttViewModel : ObservableObject
 
     public bool CanZoomOut => _zoomIndex > 0;
 
-    // ---- interaction ----
-
     [RelayCommand(CanExecute = nameof(CanZoomIn))]
     public void ZoomIn()
     {
@@ -150,23 +138,20 @@ public partial class GanttViewModel : ObservableObject
         }
     }
 
-    /// <summary>Clicking a subtask bar jumps to and highlights it in the List view.</summary>
     [RelayCommand]
     private void ActivateRow(GanttBarRow? row)
     {
-        if (row?.SubtaskId is { } id)
+        if (row?.TaskId is { } id)
         {
-            _onSubtaskActivated?.Invoke(id);
+            _onTaskActivated?.Invoke(id);
         }
     }
-
-    // ---- geometry ----
 
     private void Rebuild()
     {
         var (pixelsPerDay, unit, _) = ZoomLevels[_zoomIndex];
 
-        var spans = GanttSchedule.PhaseSpans(_project);
+        var spans = GanttSchedule.PhaseSpans(_head);
         var range = GanttSchedule.DateRange(spans);
 
         var (rawStart, rawEnd) = range is { } r
@@ -175,17 +160,17 @@ public partial class GanttViewModel : ObservableObject
 
         Calculator = new GanttTimelineCalculator(rawStart, rawEnd, pixelsPerDay);
 
-        var byPhase = _project.Subtasks.ToLookup(s => s.PhaseId);
+        var byPhase = _head.Children.ToLookup(c => c.PhaseId);
         var rows = new List<GanttBarRow>();
 
         foreach (var span in spans)
         {
-            var subs = byPhase[span.Phase.Id].ToList();
-            rows.Add(BuildPhaseRow(span, rows.Count * RowPitch, subs));
+            var members = byPhase[span.Phase.Id].ToList();
+            rows.Add(BuildPhaseRow(span, rows.Count * RowPitch, members));
 
-            foreach (var subtask in GanttSchedule.OrderSubtasks(subs, span))
+            foreach (var child in GanttSchedule.OrderSubtasks(members, span))
             {
-                rows.Add(BuildSubtaskRow(subtask, rows.Count * RowPitch, span));
+                rows.Add(BuildTaskRow(child, rows.Count * RowPitch, span));
             }
         }
 
@@ -202,9 +187,9 @@ public partial class GanttViewModel : ObservableObject
         ZoomOutCommand.NotifyCanExecuteChanged();
     }
 
-    private GanttBarRow BuildPhaseRow(PhaseSpan span, double top, List<Subtask> subs)
+    private GanttBarRow BuildPhaseRow(PhaseSpan span, double top, List<TaskItem> members)
     {
-        var progress = Progress.Of(subs);
+        var progress = Progress.Of(members);
 
         if (!span.HasBar)
         {
@@ -213,7 +198,7 @@ public partial class GanttViewModel : ObservableObject
                 Label = span.Phase.Name,
                 Top = top,
                 IsPhase = true,
-                Status = GanttSchedule.AggregatePhaseStatus(subs),
+                Status = GanttSchedule.AggregatePhaseStatus(members),
             };
         }
 
@@ -230,26 +215,25 @@ public partial class GanttViewModel : ObservableObject
             BarLeft = left,
             BarTop = top + BarPad,
             BarWidth = width,
-            Status = GanttSchedule.AggregatePhaseStatus(subs),
+            Status = GanttSchedule.AggregatePhaseStatus(members),
             BarOpacity = span.Phase.IsLocked ? 0.45 : 1,
             HasBlocked = progress.Blocked > 0,
             BlockedWidth = width * blockedFraction,
         };
     }
 
-    private GanttBarRow BuildSubtaskRow(Subtask subtask, double top, PhaseSpan phaseSpan)
+    private GanttBarRow BuildTaskRow(TaskItem task, double top, PhaseSpan phaseSpan)
     {
-        var (start, end) = EffectiveDates(subtask, phaseSpan);
-        var assignee = subtask.AssignedTo;
-        var displayStatus = subtask.Status == SubtaskStatus.Review ? SubtaskStatus.InProgress : subtask.Status;
-
+        var (start, end) = GanttSchedule.SubtaskSpan(task, phaseSpan, _isWaterfall);
+        var assignee = task.AssignedTo;
+        var displayStatus = task.Status == WorkStatus.Review ? WorkStatus.InProgress : task.Status;
         var hasBar = start is not null && end is not null;
 
         return new GanttBarRow
         {
-            Label = subtask.Title,
+            Label = task.Title,
             Top = top,
-            SubtaskId = subtask.Id,
+            TaskId = task.Id,
             Indent = 22,
             Status = displayStatus,
             BarOpacity = phaseSpan.Phase.IsLocked ? 0.45 : 1,
@@ -259,16 +243,10 @@ public partial class GanttViewModel : ObservableObject
             BarWidth = hasBar ? Calculator.Width(start!.Value, end!.Value) : 0,
             HasAssignee = assignee is not null,
             AssigneeName = assignee?.Name ?? string.Empty,
-            AssigneeFirstName = FirstName(assignee?.Name),
+            AssigneeFirstName = assignee?.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty,
             AssigneeColor = assignee?.InitialsColorHex ?? "#64748B",
         };
     }
-
-    private (DateTime? Start, DateTime? End) EffectiveDates(Subtask subtask, PhaseSpan phaseSpan) =>
-        GanttSchedule.SubtaskSpan(subtask, phaseSpan, _isWaterfall);
-
-    private static string FirstName(string? name) =>
-        name?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
 
     private IReadOnlyList<GanttConnector> BuildConnectors(List<GanttBarRow> rows)
     {

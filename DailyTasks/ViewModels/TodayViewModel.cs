@@ -7,8 +7,7 @@ using DailyTasks.Services;
 namespace DailyTasks.ViewModels;
 
 /// <summary>
-/// Registered as a singleton so quick-capture additions land on an already-open
-/// Today page, and so the service subscription below has a single owner.
+/// Registered as a singleton so quick-capture additions land on an already-open Today page.
 /// </summary>
 public partial class TodayViewModel : TaskListViewModel
 {
@@ -17,14 +16,10 @@ public partial class TodayViewModel : TaskListViewModel
 
     private readonly ICategoryService _categories;
     private readonly SettingsService _settings;
-    private readonly IProjectService _projectService;
-    private readonly IProjectCoordinator _projectCoordinator;
     private readonly ITeamCoordinator _teamCoordinator;
     private readonly Queue<TaskItem> _staleQueue = new();
 
     private TaskItem? _staleTask;
-
-    /// <summary>The typed text with date/priority words removed; what actually gets saved.</summary>
     private string _parsedTitle = string.Empty;
 
     [ObservableProperty]
@@ -69,9 +64,6 @@ public partial class TodayViewModel : TaskListViewModel
     [ObservableProperty]
     private string _workloadText = string.Empty;
 
-    [ObservableProperty]
-    private bool _hasProjects;
-
     public TodayViewModel(
         ITaskService tasks,
         ICategoryService categories,
@@ -79,41 +71,17 @@ public partial class TodayViewModel : TaskListViewModel
         FocusService focus,
         ITaskEditor editor,
         GitWatcherService gitWatcher,
-        IProjectService projectService,
-        IProjectCoordinator projectCoordinator,
-        ITeamCoordinator teamCoordinator)
-        : base(tasks, focus, editor)
+        ITeamCoordinator teamCoordinator,
+        ITaskCoordinator taskCoordinator)
+        : base(tasks, focus, editor, taskCoordinator)
     {
         _categories = categories;
         _settings = settings;
-        _projectService = projectService;
-        _projectCoordinator = projectCoordinator;
         _teamCoordinator = teamCoordinator;
         _freeHoursToday = settings.FreeHoursPerDay;
 
         tasks.TaskAdded += OnTaskAdded;
         gitWatcher.TaskCompleted += OnTaskCompletedByCommit;
-    }
-
-    /// <summary>Active projects surfaced as distinct cards, above the flat task list.</summary>
-    public ObservableCollection<ProjectViewModel> TodayProjects { get; } = [];
-
-    /// <summary>
-    /// The watcher works on its own task instances, so match by id, sync our copy,
-    /// and let the card leave the page.
-    /// </summary>
-    private void OnTaskCompletedByCommit(object? sender, TaskItem task)
-    {
-        var card = Items.Concat(BigThree).FirstOrDefault(i => i.Model.Id == task.Id);
-
-        if (card is null)
-        {
-            return;
-        }
-
-        card.Model.IsCompleted = true;
-        card.Model.CompletedAt = task.CompletedAt;
-        RemoveItem(card);
     }
 
     public override string EmptyMessage => "Nothing due today. Add a task above to get started.";
@@ -128,19 +96,22 @@ public partial class TodayViewModel : TaskListViewModel
     public IReadOnlyList<TaskPriority> Priorities { get; } =
         [TaskPriority.High, TaskPriority.Medium, TaskPriority.Low];
 
-    /// <summary>
-    /// Today means: not done, and either due on/before today or not scheduled at all.
-    /// Overdue tasks stay visible rather than silently disappearing. Project heads are
-    /// excluded here — they render as their own cards from <see cref="TodayProjects"/>.
-    /// </summary>
-    protected override bool Includes(TaskItem task) =>
-        task.TaskType == TaskType.Simple
-        && !task.IsCompleted
-        && (task.DueDate is null || task.DueDate.Value.Date <= DateTime.Today);
+    private void OnTaskCompletedByCommit(object? sender, TaskItem task)
+    {
+        var card = Items.Concat(BigThree).FirstOrDefault(i => i.Model.Id == task.Id);
+        if (card is null)
+        {
+            return;
+        }
 
-    private static bool IsTodayProject(Project project) =>
-        !project.TaskItem.IsCompleted
-        && (project.TaskItem.DueDate is null || project.TaskItem.DueDate.Value.Date <= DateTime.Today);
+        card.Model.IsCompleted = true;
+        card.Model.CompletedAt = task.CompletedAt;
+        RemoveItem(card);
+    }
+
+    /// <summary>Today: not done, and due on/before today or unscheduled. Only top-level tasks.</summary>
+    protected override bool Includes(TaskItem task) =>
+        !task.IsCompleted && (task.DueDate is null || task.DueDate.Value.Date <= DateTime.Today);
 
     private static bool IsPinnedToday(TaskItem task) => task.BigThreeDate?.Date == DateTime.Today;
 
@@ -157,57 +128,15 @@ public partial class TodayViewModel : TaskListViewModel
         }
 
         await base.LoadAsync();
-        await LoadProjectsAsync();
-    }
-
-    private async Task LoadProjectsAsync()
-    {
-        TodayProjects.Clear();
-
-        foreach (var project in await _projectService.GetAllAsync())
-        {
-            if (IsTodayProject(project))
-            {
-                TodayProjects.Add(new ProjectViewModel(project));
-            }
-        }
-
-        HasProjects = TodayProjects.Count > 0;
-        UpdateEmpty();
-    }
-
-    [RelayCommand]
-    private async Task OpenProjectAsync(ProjectViewModel project)
-    {
-        await _projectCoordinator.OpenDetailAsync(project.Id);
-
-        // The project may have advanced or completed while the detail was open.
-        await LoadProjectsAsync();
-    }
-
-    // ---- overflow (⋯) menu ----
-
-    [RelayCommand]
-    private async Task NewProjectFromMenuAsync()
-    {
-        if (await _projectCoordinator.CreateAsync() is not null)
-        {
-            await LoadProjectsAsync();
-        }
     }
 
     [RelayCommand]
     private void ManageTeam() => _teamCoordinator.OpenManager();
 
-    // ---- two-collection bookkeeping: pinned tasks live in BigThree, the rest in Items ----
+    // ---- pinned tasks live in BigThree, the rest in Items ----
 
     protected override void ClearAll()
     {
-        foreach (var item in BigThree)
-        {
-            Detach(item);
-        }
-
         BigThree.Clear();
         base.ClearAll();
     }
@@ -220,7 +149,6 @@ public partial class TodayViewModel : TaskListViewModel
             return;
         }
 
-        Attach(item);
         BigThree.Add(item);
         UpdateEmpty();
     }
@@ -233,14 +161,13 @@ public partial class TodayViewModel : TaskListViewModel
             return;
         }
 
-        Detach(item);
         BigThree.Remove(item);
         UpdateEmpty();
     }
 
     protected override void UpdateEmpty()
     {
-        IsEmpty = Items.Count == 0 && BigThree.Count == 0 && TodayProjects.Count == 0;
+        IsEmpty = Items.Count == 0 && BigThree.Count == 0;
         HasBigThree = BigThree.Count > 0;
         RecomputeWorkload();
     }
@@ -255,30 +182,16 @@ public partial class TodayViewModel : TaskListViewModel
 
     private void RecomputeWorkload()
     {
-        var plannedMinutes = Items.Concat(BigThree).Sum(i => i.Model.EstimatedMinutes ?? 0);
-        var freeMinutes = FreeHoursToday * 60;
+        var plannedHours = Items.Concat(BigThree).Sum(i => i.Model.EstimatedHours ?? 0);
 
-        ShowWorkloadWarning = plannedMinutes > 0 && plannedMinutes > freeMinutes;
+        ShowWorkloadWarning = plannedHours > 0 && plannedHours > FreeHoursToday;
 
         if (ShowWorkloadWarning)
         {
             WorkloadText =
-                $"Today's estimates add up to {FormatMinutes(plannedMinutes)}, "
-                + $"but you have {FormatMinutes((int)freeMinutes)} free. Something may need to move.";
+                $"Today's estimates add up to {plannedHours:0.#}h, "
+                + $"but you have {FreeHoursToday:0.#}h free. Something may need to move.";
         }
-    }
-
-    private static string FormatMinutes(int minutes)
-    {
-        var hours = minutes / 60;
-        var mins = minutes % 60;
-
-        return (hours, mins) switch
-        {
-            (0, _) => $"{mins}m",
-            (_, 0) => $"{hours}h",
-            _ => $"{hours}h {mins}m",
-        };
     }
 
     // ---- quick add ----
@@ -297,9 +210,7 @@ public partial class TodayViewModel : TaskListViewModel
             DueDate = NewTaskDueDate,
         };
 
-        // The card is added by OnTaskAdded, which also covers the quick-capture bar.
         await Tasks.AddAsync(task);
-
         NewTaskTitle = string.Empty;
     }
 
@@ -312,7 +223,6 @@ public partial class TodayViewModel : TaskListViewModel
         _parsedTitle = parsed.Title;
         ParsePreview = parsed.HasHints ? $"{parsed.Title} — {parsed.Summary}" : string.Empty;
 
-        // Only overwrite the pickers when the sentence actually said something.
         if (parsed.DueDate is { } due)
         {
             NewTaskDueDate = due;
@@ -330,18 +240,19 @@ public partial class TodayViewModel : TaskListViewModel
 
     private void OnTaskAdded(object? sender, TaskItem task)
     {
-        if (Includes(task))
+        // Only surface newly-added top-level tasks that belong on Today.
+        if (task.ParentTaskId is null && Includes(task))
         {
-            AddItem(new TaskItemViewModel(task));
+            AddItem(new TaskItemViewModel(task, this));
         }
     }
 
     // ---- once-a-day rituals ----
 
-    protected override Task AfterLoadAsync(IReadOnlyList<TaskItem> allTasks)
+    protected override Task AfterLoadAsync(IReadOnlyList<TaskItem> roots)
     {
         OfferBigThree();
-        QueueStaleTasks(allTasks);
+        QueueStaleTasks(roots);
         return Task.CompletedTask;
     }
 
@@ -395,7 +306,6 @@ public partial class TodayViewModel : TaskListViewModel
             candidate.Task.Model.BigThreeDate = DateTime.Today;
             await Tasks.UpdateAsync(candidate.Task.Model);
 
-            // Move between collections; the completion handler stays attached.
             Items.Remove(candidate.Task);
             BigThree.Add(candidate.Task);
         }
@@ -418,11 +328,11 @@ public partial class TodayViewModel : TaskListViewModel
 
     // ---- the stale-task nudge ----
 
-    private void QueueStaleTasks(IReadOnlyList<TaskItem> allTasks)
+    private void QueueStaleTasks(IReadOnlyList<TaskItem> roots)
     {
         _staleQueue.Clear();
 
-        foreach (var task in allTasks.Where(IsStale).OrderBy(t => t.CreatedAt))
+        foreach (var task in roots.Where(IsStale).OrderBy(t => t.CreatedAt))
         {
             _staleQueue.Enqueue(task);
         }
@@ -471,7 +381,6 @@ public partial class TodayViewModel : TaskListViewModel
         task.LastNudgedAt = DateTime.Now;
         await Tasks.UpdateAsync(task);
 
-        // Now due tomorrow, so it leaves the Today list.
         RemoveCardFor(task);
         ShowNextStale();
     }
@@ -497,7 +406,6 @@ public partial class TodayViewModel : TaskListViewModel
     private void RemoveCardFor(TaskItem task)
     {
         var card = Items.Concat(BigThree).FirstOrDefault(i => ReferenceEquals(i.Model, task));
-
         if (card is not null)
         {
             RemoveItem(card);
