@@ -47,7 +47,9 @@ public sealed class GitWatcherService(ITaskService tasks, SettingsService settin
 
         try
         {
-            var linked = (await tasks.GetAllAsync())
+            var roots = await tasks.GetRootsAsync();
+            var linked = roots
+                .SelectMany(r => TaskTree.Descendants(r).Prepend(r))
                 .Where(t => !t.IsCompleted && !string.IsNullOrWhiteSpace(t.GitLink))
                 .ToList();
 

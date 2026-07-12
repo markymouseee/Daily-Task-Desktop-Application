@@ -60,12 +60,17 @@ public sealed class TaskService(IDbContextFactory<AppDbContext> factory) : ITask
     public async Task AddAsync(TaskItem task)
     {
         await using var db = await factory.CreateDbContextAsync();
-        AttachCategory(db, task);
+
+        // Insert on FK scalars only. The Category/Parent/AssignedTo objects were loaded
+        // untracked (and shared across the graph), so tracking them here trips EF's
+        // duplicate-key guard — detach them for the insert, then restore for the caller.
+        var category = task.Category;
         DetachNavigations(task);
 
         db.Tasks.Add(task);
         await db.SaveChangesAsync();
 
+        task.Category = category;
         TaskAdded?.Invoke(this, task);
     }
 
@@ -221,17 +226,10 @@ public sealed class TaskService(IDbContextFactory<AppDbContext> factory) : ITask
         return date;
     }
 
-    private static void AttachCategory(AppDbContext db, TaskItem task)
-    {
-        if (task.Category is not null)
-        {
-            db.Attach(task.Category);
-        }
-    }
-
-    /// <summary>Callers pass FK scalars; drop navs loaded elsewhere so EF doesn't re-insert them.</summary>
+    /// <summary>Callers pass FK scalars; drop navs loaded elsewhere so EF doesn't re-track them.</summary>
     private static void DetachNavigations(TaskItem task)
     {
+        task.Category = null!;
         task.Parent = null;
         task.Phase = null;
         task.AssignedTo = null;
