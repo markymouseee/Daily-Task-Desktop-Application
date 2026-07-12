@@ -23,7 +23,6 @@ public partial class TodayPage : Page, INavigationAware
         // view model's existing collections — no view-model changes needed.
         _viewModel.Items.CollectionChanged += (_, _) => UpdateSubheading();
         _viewModel.BigThree.CollectionChanged += (_, _) => UpdateSubheading();
-        _viewModel.TodayProjects.CollectionChanged += (_, _) => UpdateSubheading();
     }
 
     public async Task OnNavigatedToAsync()
@@ -34,8 +33,6 @@ public partial class TodayPage : Page, INavigationAware
     }
 
     public Task OnNavigatedFromAsync() => Task.CompletedTask;
-
-    private void OnNewTask(object sender, RoutedEventArgs e) => QuickAddBox.Focus();
 
     private void OnKebab(object sender, RoutedEventArgs e)
     {
@@ -73,11 +70,6 @@ public partial class TodayPage : Page, INavigationAware
             DateTime.Now.ToString("dddd, MMMM d"),
             taskCount == 1 ? "1 task today" : $"{taskCount} tasks today",
         };
-
-        if (_viewModel.TodayProjects.Count > 0)
-        {
-            parts.Add(_viewModel.TodayProjects.Count == 1 ? "1 project" : $"{_viewModel.TodayProjects.Count} projects");
-        }
 
         SubheadingText.Text = string.Join("  ·  ", parts);
     }
