@@ -13,7 +13,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!--  ======= Zoom controls =======  -->
+        <!--  Zoom controls  -->
         <StackPanel
             Grid.Row="0"
             Margin="0,0,0,10"
@@ -40,7 +40,6 @@
                 ToolTip="Zoom in (Ctrl + scroll)" />
         </StackPanel>
 
-        <!--  ======= Chart =======  -->
         <Border
             Grid.Row="1"
             BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
@@ -49,7 +48,6 @@
             CornerRadius="10">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <!--  Matches GanttViewModel.NameColumnWidth / AssignedColumnWidth  -->
                     <ColumnDefinition Width="220" />
                     <ColumnDefinition Width="132" />
                     <ColumnDefinition Width="*" />
@@ -59,7 +57,6 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <!--  Header corners  -->
                 <Border
                     Grid.Row="0"
                     Grid.Column="0"
@@ -85,7 +82,6 @@
                         Text="ASSIGNED" />
                 </Border>
 
-                <!--  Week/month header (horizontal scroll follows the body)  -->
                 <Border
                     Grid.Row="0"
                     Grid.Column="2"
@@ -140,7 +136,6 @@
                     </ScrollViewer>
                 </Border>
 
-                <!--  Frozen label + assignee columns (vertical scroll follows the body)  -->
                 <Border
                     Grid.Row="1"
                     Grid.Column="0"
@@ -194,7 +189,6 @@
                                     </Border>
 
                                     <DataTemplate.Triggers>
-                                        <!--  Phase header rows are shaded and bold  -->
                                         <DataTrigger Binding="{Binding IsPhase}" Value="True">
                                             <Setter TargetName="RowBg" Property="Background" Value="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" />
                                             <Setter TargetName="NameText" Property="FontWeight" Value="SemiBold" />
@@ -206,7 +200,6 @@
                     </ScrollViewer>
                 </Border>
 
-                <!--  Body: shaded phase bands, gridlines, connectors, bars, today line  -->
                 <ScrollViewer
                     x:Name="BodyScroll"
                     Grid.Row="1"
@@ -216,7 +209,6 @@
                     ScrollChanged="OnBodyScrollChanged"
                     VerticalScrollBarVisibility="Auto">
                     <Grid Width="{Binding TimelineWidth}" Height="{Binding BodyHeight}">
-                        <!--  Phase row bands  -->
                         <ItemsControl ItemsSource="{Binding Rows}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -241,7 +233,6 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!--  Column gridlines  -->
                         <ItemsControl ItemsSource="{Binding Columns}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -265,7 +256,6 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!--  Dependency connectors (Waterfall)  -->
                         <ItemsControl ItemsSource="{Binding Connectors}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -282,7 +272,6 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!--  Bars (click a subtask bar to jump to it in the List view)  -->
                         <ItemsControl ItemsSource="{Binding Rows}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -320,7 +309,6 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <!--  Today marker line  -->
                         <Canvas Visibility="{Binding HasToday, Converter={StaticResource BoolToVisibility}}">
                             <Border
                                 Canvas.Left="{Binding TodayX}"
@@ -329,20 +317,19 @@
                                 Background="{DynamicResource AccentFillColorDefaultBrush}" />
                         </Canvas>
 
-                        <!--  Empty state  -->
                         <TextBlock
                             Margin="24"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Top"
                             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                            Text="No dated work yet — add start/due dates to subtasks to see the timeline."
+                            Text="No dated work yet — add start/due dates to child tasks to see the timeline."
                             Visibility="{Binding HasBars, Converter={StaticResource InverseBoolToVisibility}}" />
                     </Grid>
                 </ScrollViewer>
             </Grid>
         </Border>
 
-        <!--  ======= Legend =======  -->
+        <!--  Legend  -->
         <StackPanel
             Grid.Row="2"
             Margin="2,12,0,0"

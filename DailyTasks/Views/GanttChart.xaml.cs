@@ -5,7 +5,7 @@ using DailyTasks.ViewModels;
 namespace DailyTasks.Views;
 
 /// <summary>
-/// Custom Canvas-based Gantt chart. Keeps the frozen label column and week header in
+/// Custom Canvas Gantt chart. Keeps the frozen label/assignee columns and the week header in
 /// sync with the scrolling timeline body; all date→pixel math lives in the view model.
 /// </summary>
 public partial class GanttChart : UserControl
@@ -14,7 +14,6 @@ public partial class GanttChart : UserControl
 
     private void OnBodyScrollChanged(object sender, ScrollChangedEventArgs e)
     {
-        // The header follows the body horizontally; the labels follow it vertically.
         if (e.HorizontalChange != 0)
         {
             HeaderScroll.ScrollToHorizontalOffset(e.HorizontalOffset);
@@ -28,7 +27,6 @@ public partial class GanttChart : UserControl
 
     private void OnBodyWheel(object sender, MouseWheelEventArgs e)
     {
-        // Ctrl + wheel zooms the timeline; a plain wheel scrolls as usual.
         if ((Keyboard.Modifiers & ModifierKeys.Control) == 0 || DataContext is not GanttViewModel gantt)
         {
             return;
@@ -46,4 +44,3 @@ public partial class GanttChart : UserControl
         e.Handled = true;
     }
 }
-

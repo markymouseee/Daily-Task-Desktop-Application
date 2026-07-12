@@ -227,26 +227,6 @@
                             Checked="OnNavChecked"
                             GroupName="Nav"
                             Style="{StaticResource NavItem}"
-                            Tag="{x:Type pages:ProjectsPage}">
-                            <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon
-                                    VerticalAlignment="Center"
-                                    FontSize="18"
-                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
-                                    Symbol="Folder24" />
-                                <TextBlock
-                                    Margin="12,0,0,0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
-                                    Text="Projects" />
-                            </StackPanel>
-                        </RadioButton>
-
-                        <RadioButton
-                            Checked="OnNavChecked"
-                            GroupName="Nav"
-                            Style="{StaticResource NavItem}"
                             Tag="{x:Type pages:CompletedPage}">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon

@@ -12,218 +12,356 @@
     <views:NullToVisibilityConverter x:Key="NullToVisibility" />
     <views:BoolToVisibilityConverter x:Key="BoolToVisibility" />
     <views:EmptyToVisibilityConverter x:Key="EmptyToVisibility" />
+    <views:FractionOfWidthConverter x:Key="FractionOfWidth" />
+    <views:ProgressToBrushConverter x:Key="ProgressToBrush" />
 
-    <!--  Kept in sync with Palette.Priority in Converters.cs  -->
     <SolidColorBrush x:Key="PriorityHighBrush" Color="#EF4444" />
 
-    <!--  A task card. Applied implicitly wherever a TaskItemViewModel is rendered.  -->
+    <!--  A recursive task card. Applied implicitly wherever a TaskItemViewModel is rendered.  -->
     <DataTemplate DataType="{x:Type vm:TaskItemViewModel}">
-        <Border
-            x:Name="CardRoot"
-            Margin="0,0,0,10"
-            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
-            BorderThickness="1"
-            CornerRadius="12">
+        <StackPanel>
+            <Border
+                x:Name="CardRoot"
+                Margin="0,0,0,10"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="4" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="4" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <!--  Accent strip, shown only on Big 3 cards to set them apart  -->
-                <Border
-                    x:Name="AccentStrip"
-                    Grid.Column="0"
-                    Background="Transparent"
-                    CornerRadius="12,0,0,12" />
+                    <!--  Accent strip, shown only on Big 3 cards  -->
+                    <Border
+                        x:Name="AccentStrip"
+                        Grid.Column="0"
+                        Background="Transparent"
+                        CornerRadius="12,0,0,12" />
 
-                <CheckBox
-                    Grid.Column="1"
-                    Margin="14,0,4,0"
-                    VerticalAlignment="Center"
-                    IsChecked="{Binding IsCompleted}" />
+                    <!--  Expand chevron — only for cards that have children  -->
+                    <ui:Button
+                        x:Name="Chevron"
+                        Grid.Column="1"
+                        Width="26"
+                        Margin="6,0,-4,0"
+                        Padding="0"
+                        VerticalAlignment="Center"
+                        Appearance="Transparent"
+                        Command="{Binding ToggleExpandCommand}"
+                        Icon="{ui:SymbolIcon ChevronRight24}"
+                        Visibility="{Binding HasChildren, Converter={StaticResource BoolToVisibility}}" />
 
-                <StackPanel
-                    Grid.Column="2"
-                    Margin="4,14,12,14"
-                    VerticalAlignment="Center">
-                    <TextBlock
-                        x:Name="TitleText"
-                        FontSize="14"
-                        FontWeight="SemiBold"
-                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                        Text="{Binding Title}"
-                        TextTrimming="CharacterEllipsis"
-                        TextWrapping="NoWrap" />
+                    <CheckBox
+                        Grid.Column="2"
+                        Margin="8,0,4,0"
+                        VerticalAlignment="Center"
+                        IsChecked="{Binding IsCompleted}" />
 
-                    <!--  Why this matters  -->
-                    <TextBlock
-                        Margin="0,3,0,0"
-                        FontSize="12"
-                        FontStyle="Italic"
-                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                        Text="{Binding WhyReason}"
-                        TextTrimming="CharacterEllipsis"
-                        Visibility="{Binding WhyReason, Converter={StaticResource EmptyToVisibility}}" />
-
-                    <!--  Where you left off — shown prominently when returning to a task  -->
                     <StackPanel
-                        Margin="0,6,0,0"
-                        Orientation="Horizontal"
-                        Visibility="{Binding ContextResumeNote, Converter={StaticResource EmptyToVisibility}}">
-                        <ui:SymbolIcon
-                            VerticalAlignment="Center"
-                            FontSize="12"
-                            Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
-                            Symbol="Comment24" />
+                        Grid.Column="3"
+                        Margin="4,12,12,12"
+                        VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock
+                                x:Name="TitleText"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                Text="{Binding Title}"
+                                TextTrimming="CharacterEllipsis" />
+
+                            <!--  Methodology badge, when organized  -->
+                            <Border
+                                Margin="10,1,0,0"
+                                Padding="7,1"
+                                VerticalAlignment="Center"
+                                Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                CornerRadius="7"
+                                Visibility="{Binding IsOrganized, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock
+                                    FontSize="10"
+                                    FontWeight="SemiBold"
+                                    Foreground="White"
+                                    Text="{Binding MethodologyBadge}" />
+                            </Border>
+                        </StackPanel>
+
                         <TextBlock
-                            Margin="5,0,0,0"
-                            VerticalAlignment="Center"
+                            Margin="0,3,0,0"
                             FontSize="12"
-                            Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
-                            Text="{Binding ContextResumeNote}"
-                            TextTrimming="CharacterEllipsis" />
+                            FontStyle="Italic"
+                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                            Text="{Binding WhyReason}"
+                            TextTrimming="CharacterEllipsis"
+                            Visibility="{Binding WhyReason, Converter={StaticResource EmptyToVisibility}}" />
+
+                        <StackPanel
+                            Margin="0,6,0,0"
+                            Orientation="Horizontal"
+                            Visibility="{Binding ContextResumeNote, Converter={StaticResource EmptyToVisibility}}">
+                            <ui:SymbolIcon
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                                Symbol="Comment24" />
+                            <TextBlock
+                                Margin="5,0,0,0"
+                                VerticalAlignment="Center"
+                                FontSize="12"
+                                Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                                Text="{Binding ContextResumeNote}"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+
+                        <!--  Rollup progress bar — only when the card has children  -->
+                        <Grid Margin="0,8,0,0" Visibility="{Binding ShowProgress, Converter={StaticResource BoolToVisibility}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                x:Name="ProgTrack"
+                                Height="6"
+                                VerticalAlignment="Center"
+                                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                ClipToBounds="True"
+                                CornerRadius="3">
+                                <Border
+                                    HorizontalAlignment="Left"
+                                    Background="{Binding ProgressFraction, Converter={StaticResource ProgressToBrush}}"
+                                    CornerRadius="3">
+                                    <Border.Width>
+                                        <MultiBinding Converter="{StaticResource FractionOfWidth}">
+                                            <Binding Path="ProgressFraction" />
+                                            <Binding ElementName="ProgTrack" Path="ActualWidth" />
+                                        </MultiBinding>
+                                    </Border.Width>
+                                </Border>
+                            </Border>
+                            <TextBlock
+                                Grid.Column="1"
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                Text="{Binding ProgressText}" />
+                        </Grid>
+
+                        <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                            <!--  Category pill  -->
+                            <Border
+                                Padding="8,2"
+                                VerticalAlignment="Center"
+                                Background="{Binding CategoryColor, Converter={StaticResource HexToBrush}, ConverterParameter=Fill}"
+                                CornerRadius="8">
+                                <TextBlock
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Foreground="{Binding CategoryColor, Converter={StaticResource HexToBrush}}"
+                                    Text="{Binding CategoryName}" />
+                            </Border>
+
+                            <!--  Assignee badge  -->
+                            <StackPanel
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Visibility="{Binding HasAssignee, Converter={StaticResource BoolToVisibility}}">
+                                <views:Avatar
+                                    VerticalAlignment="Center"
+                                    ColorHex="{Binding AssigneeColor}"
+                                    DisplayName="{Binding AssigneeName}"
+                                    Size="18" />
+                                <TextBlock
+                                    Margin="5,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="11"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding AssigneeFirstName}" />
+                            </StackPanel>
+
+                            <!--  Git link  -->
+                            <StackPanel
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Visibility="{Binding GitLink, Converter={StaticResource EmptyToVisibility}}">
+                                <ui:SymbolIcon
+                                    FontSize="12"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Symbol="BranchFork24" />
+                                <TextBlock
+                                    Margin="4,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontFamily="Cascadia Mono, Consolas"
+                                    FontSize="11"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding GitLink}" />
+                            </StackPanel>
+
+                            <!--  Due date  -->
+                            <StackPanel
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Visibility="{Binding DueDate, Converter={StaticResource NullToVisibility}}">
+                                <ui:SymbolIcon
+                                    x:Name="DueIcon"
+                                    FontSize="12"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Symbol="CalendarLtr24" />
+                                <TextBlock
+                                    x:Name="DueText"
+                                    Margin="4,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="11"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding DueDate, Converter={StaticResource DueDateToText}}" />
+                            </StackPanel>
+
+                            <!--  Recurrence  -->
+                            <StackPanel
+                                Margin="10,0,0,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Visibility="{Binding IsRecurring, Converter={StaticResource BoolToVisibility}}">
+                                <ui:SymbolIcon
+                                    FontSize="12"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Symbol="ArrowRepeatAll24" />
+                                <TextBlock
+                                    Margin="4,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="11"
+                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding RecurrenceLabel}" />
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
 
-                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
-                        <!--  Category pill  -->
+                    <StackPanel
+                        Grid.Column="4"
+                        Margin="0,0,12,0"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+
+                        <!--  Priority pill  -->
                         <Border
-                            Padding="8,2"
+                            Padding="9,3"
                             VerticalAlignment="Center"
-                            Background="{Binding CategoryColor, Converter={StaticResource HexToBrush}, ConverterParameter=Fill}"
+                            Background="{Binding Priority, Converter={StaticResource PriorityToBrush}, ConverterParameter=Fill}"
                             CornerRadius="8">
                             <TextBlock
                                 FontSize="11"
                                 FontWeight="SemiBold"
-                                Foreground="{Binding CategoryColor, Converter={StaticResource HexToBrush}}"
-                                Text="{Binding CategoryName}" />
+                                Foreground="{Binding Priority, Converter={StaticResource PriorityToBrush}}"
+                                Text="{Binding Priority}" />
                         </Border>
 
-                        <!--  Git link (developer feature)  -->
+                        <!--  Actions, revealed on hover  -->
                         <StackPanel
-                            Margin="10,0,0,0"
-                            VerticalAlignment="Center"
+                            x:Name="Actions"
+                            Margin="6,0,0,0"
                             Orientation="Horizontal"
-                            Visibility="{Binding GitLink, Converter={StaticResource EmptyToVisibility}}">
-                            <ui:SymbolIcon
-                                FontSize="12"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Symbol="BranchFork24" />
-                            <TextBlock
-                                Margin="4,0,0,0"
-                                VerticalAlignment="Center"
-                                FontFamily="Cascadia Mono, Consolas"
-                                FontSize="11"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Binding GitLink}" />
-                        </StackPanel>
-
-                        <!--  Due date  -->
-                        <StackPanel
-                            Margin="10,0,0,0"
-                            VerticalAlignment="Center"
-                            Orientation="Horizontal"
-                            Visibility="{Binding DueDate, Converter={StaticResource NullToVisibility}}">
-                            <ui:SymbolIcon
-                                x:Name="DueIcon"
-                                FontSize="12"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Symbol="CalendarLtr24" />
-                            <TextBlock
-                                x:Name="DueText"
-                                Margin="4,0,0,0"
-                                VerticalAlignment="Center"
-                                FontSize="11"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Binding DueDate, Converter={StaticResource DueDateToText}}" />
-                        </StackPanel>
-
-                        <!--  Recurrence  -->
-                        <StackPanel
-                            Margin="10,0,0,0"
-                            VerticalAlignment="Center"
-                            Orientation="Horizontal"
-                            Visibility="{Binding IsRecurring, Converter={StaticResource BoolToVisibility}}">
-                            <ui:SymbolIcon
-                                FontSize="12"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Symbol="ArrowRepeatAll24" />
-                            <TextBlock
-                                Margin="4,0,0,0"
-                                VerticalAlignment="Center"
-                                FontSize="11"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Binding RecurrenceLabel}" />
+                            Visibility="Collapsed">
+                            <ui:Button
+                                Padding="8"
+                                Appearance="Transparent"
+                                Command="{Binding ToggleExpandCommand}"
+                                Icon="{ui:SymbolIcon AddCircle24}"
+                                ToolTip="Add a subtask" />
+                            <ui:Button
+                                Padding="8"
+                                Appearance="Transparent"
+                                Command="{Binding OrganizeCommand}"
+                                Icon="{ui:SymbolIcon Options24}"
+                                ToolTip="Organize as a methodology"
+                                Visibility="{Binding CanOrganize, Converter={StaticResource BoolToVisibility}}" />
+                            <ui:Button
+                                Padding="8"
+                                Appearance="Transparent"
+                                Command="{Binding OpenDetailCommand}"
+                                Icon="{ui:SymbolIcon Open24}"
+                                ToolTip="Open phases / Gantt / export"
+                                Visibility="{Binding IsOrganized, Converter={StaticResource BoolToVisibility}}" />
+                            <ui:Button
+                                x:Name="FocusButton"
+                                Padding="8"
+                                Appearance="Transparent"
+                                Command="{Binding StartFocusCommand}"
+                                Icon="{ui:SymbolIcon Play24}"
+                                ToolTip="Start a focus session" />
+                            <ui:Button
+                                Padding="8"
+                                Appearance="Transparent"
+                                Command="{Binding EditCommand}"
+                                Icon="{ui:SymbolIcon Edit24}"
+                                ToolTip="Edit task" />
+                            <ui:Button
+                                Padding="8"
+                                Appearance="Transparent"
+                                Command="{Binding DeleteCommand}"
+                                Icon="{ui:SymbolIcon Delete24}"
+                                ToolTip="Delete task" />
                         </StackPanel>
                     </StackPanel>
-                </StackPanel>
+                </Grid>
+            </Border>
 
-                <StackPanel
-                    Grid.Column="3"
-                    Margin="0,0,12,0"
-                    VerticalAlignment="Center"
-                    Orientation="Horizontal">
+            <!--  Expanded: children (recursive) + inline add-a-subtask  -->
+            <StackPanel Margin="22,0,0,0" Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibility}}">
+                <ItemsControl ItemsSource="{Binding Children}" />
 
-                    <!--  Priority pill  -->
-                    <Border
-                        Padding="9,3"
-                        VerticalAlignment="Center"
-                        Background="{Binding Priority, Converter={StaticResource PriorityToBrush}, ConverterParameter=Fill}"
-                        CornerRadius="8">
-                        <TextBlock
-                            FontSize="11"
-                            FontWeight="SemiBold"
-                            Foreground="{Binding Priority, Converter={StaticResource PriorityToBrush}}"
-                            Text="{Binding Priority}" />
-                    </Border>
-
-                    <!--  Actions, revealed on hover  -->
-                    <StackPanel
-                        x:Name="Actions"
-                        Margin="6,0,0,0"
-                        Orientation="Horizontal"
-                        Visibility="Collapsed">
+                <Border
+                    Margin="0,0,0,10"
+                    Padding="6"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBox
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Icon="{ui:SymbolIcon Add24}"
+                            PlaceholderText="Add a subtask…"
+                            Text="{Binding NewChildTitle, UpdateSourceTrigger=PropertyChanged}">
+                            <ui:TextBox.InputBindings>
+                                <KeyBinding Key="Enter" Command="{Binding AddChildCommand}" />
+                            </ui:TextBox.InputBindings>
+                        </ui:TextBox>
                         <ui:Button
-                            x:Name="FocusButton"
-                            Padding="8"
-                            AutomationProperties.Name="Start focus"
-                            Appearance="Transparent"
-                            Command="{Binding DataContext.StartFocusCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            CommandParameter="{Binding}"
-                            Icon="{ui:SymbolIcon Play24}"
-                            ToolTip="Start a focus session" />
-                        <ui:Button
-                            Padding="8"
-                            AutomationProperties.Name="Edit task"
-                            Appearance="Transparent"
-                            Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            CommandParameter="{Binding}"
-                            Icon="{ui:SymbolIcon Edit24}"
-                            ToolTip="Edit task" />
-                        <ui:Button
-                            Padding="8"
-                            AutomationProperties.Name="Delete task"
-                            Appearance="Transparent"
-                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                            CommandParameter="{Binding}"
-                            Icon="{ui:SymbolIcon Delete24}"
-                            ToolTip="Delete task" />
-                    </StackPanel>
-                </StackPanel>
-            </Grid>
-        </Border>
+                            Grid.Column="1"
+                            Margin="6,0,0,0"
+                            Padding="12,8"
+                            VerticalAlignment="Center"
+                            Appearance="Secondary"
+                            Command="{Binding AddChildCommand}"
+                            Icon="{ui:SymbolIcon Add24}" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </StackPanel>
 
         <DataTemplate.Triggers>
-            <!--  Big 3 cards carry an accent left strip; regular cards don't  -->
             <DataTrigger Binding="{Binding Model.BigThreeDate, Converter={StaticResource IsToday}}" Value="True">
                 <Setter TargetName="AccentStrip" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
             </DataTrigger>
 
-            <!--  Action buttons appear on hover, keeping the resting card clean  -->
+            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                <Setter TargetName="Chevron" Property="Icon" Value="{ui:SymbolIcon ChevronDown24}" />
+            </DataTrigger>
+
             <Trigger SourceName="CardRoot" Property="IsMouseOver" Value="True">
                 <Setter TargetName="Actions" Property="Visibility" Value="Visible" />
             </Trigger>

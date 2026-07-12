@@ -1,0 +1,107 @@
+<ui:FluentWindow
+    x:Class="DailyTasks.Views.OrganizeWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    Title="Organize"
+    Width="520"
+    MaxHeight="760"
+    Background="{DynamicResource ApplicationBackgroundBrush}"
+    ExtendsContentIntoTitleBar="True"
+    FontFamily="Segoe UI Variable Text"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    SizeToContent="Height"
+    WindowBackdropType="Mica"
+    WindowCornerPreference="Round"
+    WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="24,8,24,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar
+            x:Name="HeaderBar"
+            Grid.Row="0"
+            Title="Organize as…"
+            ShowMaximize="False"
+            ShowMinimize="False" />
+
+        <StackPanel Grid.Row="1" Margin="0,12,0,0">
+            <StackPanel x:Name="TitleRow" Margin="0,0,0,14" Visibility="Collapsed">
+                <TextBlock
+                    Margin="0,0,0,6"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Project name" />
+                <ui:TextBox x:Name="TitleBox" PlaceholderText="Ship the billing rewrite" />
+            </StackPanel>
+
+            <TextBlock
+                Margin="0,0,0,10"
+                FontSize="13"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="Give this task a methodology to unlock phase grouping, the Gantt view and Excel export."
+                TextWrapping="Wrap" />
+
+            <RadioButton x:Name="WaterfallRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M" IsChecked="True">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Waterfall" />
+                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Requirements → Design → Implementation → Testing → Deployment → Maintenance, each locked until the previous is 100% done." TextWrapping="Wrap" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="AgileRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Agile" />
+                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Backlog, Sprint, Review, Done — grouping without hard gating." TextWrapping="Wrap" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="IterativeRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Iterative" />
+                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Repeat Plan → Build → Test → Review across a number of iterations." TextWrapping="Wrap" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="KanbanRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Kanban" />
+                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="A board — To Do, In Progress, Review, Done. No locking." TextWrapping="Wrap" />
+                </StackPanel>
+            </RadioButton>
+            <RadioButton x:Name="CustomRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Custom" />
+                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Your own phase names, in order." TextWrapping="Wrap" />
+                </StackPanel>
+            </RadioButton>
+
+            <StackPanel x:Name="IterationRow" Margin="0,10,0,0" Visibility="Collapsed">
+                <TextBlock Margin="0,0,0,6" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Number of iterations" />
+                <ui:NumberBox x:Name="IterationCountBox" Width="140" HorizontalAlignment="Left" Maximum="20" Minimum="1" SpinButtonPlacementMode="Inline" Value="3" />
+            </StackPanel>
+
+            <StackPanel x:Name="CustomPhasesRow" Margin="0,10,0,0" Visibility="Collapsed">
+                <TextBlock Margin="0,0,0,6" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Phase names — one per line, in order" />
+                <ui:TextBox x:Name="CustomPhasesBox" MinHeight="90" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="Discovery&#x0a;Prototype&#x0a;Build&#x0a;Launch" />
+            </StackPanel>
+        </StackPanel>
+
+        <DockPanel Grid.Row="2" Margin="0,20,0,0">
+            <ui:Button
+                x:Name="RemoveButton"
+                Padding="14,8"
+                Appearance="Secondary"
+                Click="OnRemove"
+                Content="Remove structure"
+                DockPanel.Dock="Left"
+                Visibility="Collapsed" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <ui:Button Margin="0,0,8,0" Padding="14,8" Appearance="Secondary" Click="OnCancel" Content="Cancel" />
+                <ui:Button Padding="14,8" Appearance="Primary" Click="OnApply" Content="Apply" Icon="{ui:SymbolIcon Checkmark24}" />
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</ui:FluentWindow>
