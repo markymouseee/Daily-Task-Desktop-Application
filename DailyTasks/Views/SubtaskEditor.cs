@@ -6,7 +6,7 @@ namespace DailyTasks.Views;
 
 public sealed class SubtaskEditor(ITeamService team) : ISubtaskEditor
 {
-    public async Task<bool> EditAsync(Subtask subtask, bool developerFeatures)
+    public async Task<bool> EditAsync(TaskItem subtask, bool developerFeatures)
     {
         var members = await team.GetAllAsync();
 

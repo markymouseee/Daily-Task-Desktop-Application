@@ -174,7 +174,7 @@ public sealed class FocusService
         var minutes = (int)Math.Round(elapsed.TotalMinutes);
         if (minutes > 0)
         {
-            task.ActualMinutes = (task.ActualMinutes ?? 0) + minutes;
+            task.ActualHours = (task.ActualHours ?? 0) + (minutes / 60.0);
             await _tasks.UpdateAsync(task);
         }
 

@@ -19,6 +19,7 @@ public partial class TodayViewModel : TaskListViewModel
     private readonly SettingsService _settings;
     private readonly IProjectService _projectService;
     private readonly IProjectCoordinator _projectCoordinator;
+    private readonly ITeamCoordinator _teamCoordinator;
     private readonly Queue<TaskItem> _staleQueue = new();
 
     private TaskItem? _staleTask;
@@ -79,13 +80,15 @@ public partial class TodayViewModel : TaskListViewModel
         ITaskEditor editor,
         GitWatcherService gitWatcher,
         IProjectService projectService,
-        IProjectCoordinator projectCoordinator)
+        IProjectCoordinator projectCoordinator,
+        ITeamCoordinator teamCoordinator)
         : base(tasks, focus, editor)
     {
         _categories = categories;
         _settings = settings;
         _projectService = projectService;
         _projectCoordinator = projectCoordinator;
+        _teamCoordinator = teamCoordinator;
         _freeHoursToday = settings.FreeHoursPerDay;
 
         tasks.TaskAdded += OnTaskAdded;
@@ -181,6 +184,20 @@ public partial class TodayViewModel : TaskListViewModel
         // The project may have advanced or completed while the detail was open.
         await LoadProjectsAsync();
     }
+
+    // ---- overflow (⋯) menu ----
+
+    [RelayCommand]
+    private async Task NewProjectFromMenuAsync()
+    {
+        if (await _projectCoordinator.CreateAsync() is not null)
+        {
+            await LoadProjectsAsync();
+        }
+    }
+
+    [RelayCommand]
+    private void ManageTeam() => _teamCoordinator.OpenManager();
 
     // ---- two-collection bookkeeping: pinned tasks live in BigThree, the rest in Items ----
 

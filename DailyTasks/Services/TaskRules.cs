@@ -2,7 +2,7 @@ using DailyTasks.Models;
 
 namespace DailyTasks.Services;
 
-/// <summary>A phase's (or project's, or iteration's) completion at a glance.</summary>
+/// <summary>A group of tasks' completion at a glance (phase, subtree, or iteration).</summary>
 public readonly record struct Progress(int Total, int Done, int Blocked)
 {
     /// <summary>0–1. An empty group reads as 0% rather than a divide-by-zero.</summary>
@@ -15,18 +15,18 @@ public readonly record struct Progress(int Total, int Done, int Blocked)
 
     public bool HasBlocked => Blocked > 0;
 
-    public static Progress Of(IEnumerable<Subtask> subtasks)
+    public static Progress Of(IEnumerable<TaskItem> tasks)
     {
         int total = 0, done = 0, blocked = 0;
 
-        foreach (var s in subtasks)
+        foreach (var t in tasks)
         {
             total++;
-            if (s.Status == SubtaskStatus.Done)
+            if (t.Status == WorkStatus.Done)
             {
                 done++;
             }
-            else if (s.Status == SubtaskStatus.Blocked)
+            else if (t.Status == WorkStatus.Blocked)
             {
                 blocked++;
             }
@@ -37,27 +37,26 @@ public readonly record struct Progress(int Total, int Done, int Blocked)
 }
 
 /// <summary>
-/// Pure phase-gating and progress logic, shared by the detail view models and the
-/// Excel export so both agree on what "complete" and "locked" mean.
+/// Pure phase-gating and progress logic for a methodology-organized task, shared by the
+/// detail view models, the Gantt and the Excel export so they all agree on what
+/// "complete" and "locked" mean. A task's phase members are its direct children.
 /// </summary>
-public static class ProjectRules
+public static class TaskRules
 {
     /// <summary>The out-of-the-box phase names for a methodology, in order.</summary>
     public static IReadOnlyList<string> DefaultPhaseNames(Methodology methodology) => methodology switch
     {
-        // Sequential, each gated behind the previous reaching 100%.
         Methodology.Waterfall =>
             ["Requirements", "Design", "Implementation", "Testing", "Deployment", "Maintenance"],
 
         Methodology.Agile => ["Backlog", "Sprint", "Review", "Done"],
 
-        // One shared set; each iteration reuses it, distinguished by IterationNumber.
         Methodology.Iterative => ["Plan", "Build", "Test", "Review"],
 
-        // Kanban columns come straight from SubtaskStatus, so it owns no phases.
+        // Kanban columns come straight from WorkStatus, so it owns no phases.
         Methodology.Kanban => [],
 
-        // Custom phases are supplied by the user at creation time.
+        // Custom phases are supplied by the user.
         Methodology.Custom => [],
 
         _ => [],
@@ -67,16 +66,16 @@ public static class ProjectRules
     public static bool GatesPhases(Methodology methodology) => methodology == Methodology.Waterfall;
 
     /// <summary>
-    /// Recomputes each phase's <see cref="Phase.IsLocked"/> in place: a Waterfall phase
-    /// is locked until every earlier phase is complete. Returns the phases whose lock
-    /// state actually changed, so callers persist only those.
+    /// Recomputes each phase's <see cref="Phase.IsLocked"/> in place for a methodology head:
+    /// a Waterfall phase is locked until every earlier phase is complete. Returns the phases
+    /// whose lock state changed, so callers persist only those.
     /// </summary>
-    public static IReadOnlyList<Phase> RecomputeLocks(Project project)
+    public static IReadOnlyList<Phase> RecomputeLocks(TaskItem head)
     {
         var changed = new List<Phase>();
-        var ordered = project.Phases.OrderBy(p => p.Order).ToList();
+        var ordered = head.Phases.OrderBy(p => p.Order).ToList();
 
-        if (!GatesPhases(project.Methodology))
+        if (head.Methodology is not { } methodology || !GatesPhases(methodology))
         {
             foreach (var phase in ordered)
             {
@@ -86,32 +85,24 @@ public static class ProjectRules
             return changed;
         }
 
-        // Group off the project's own subtask list rather than each phase's
-        // back-navigation, which the loaded graph doesn't populate.
-        var byPhase = project.Subtasks.ToLookup(s => s.PhaseId);
+        var byPhase = head.Children.ToLookup(c => c.PhaseId);
         var priorComplete = true;
 
         foreach (var phase in ordered)
         {
             SetLock(phase, !priorComplete, changed);
-
-            // The next phase unlocks only once this one is finished, so a gap
-            // (an unfinished phase) keeps everything after it locked.
             priorComplete = priorComplete && Progress.Of(byPhase[phase.Id]).IsComplete;
         }
 
         return changed;
     }
 
-    private static bool SetLock(Phase phase, bool locked, List<Phase> changed)
+    private static void SetLock(Phase phase, bool locked, List<Phase> changed)
     {
-        if (phase.IsLocked == locked)
+        if (phase.IsLocked != locked)
         {
-            return false;
+            phase.IsLocked = locked;
+            changed.Add(phase);
         }
-
-        phase.IsLocked = locked;
-        changed.Add(phase);
-        return true;
     }
 }

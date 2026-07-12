@@ -289,6 +289,26 @@
                         </RadioButton>
 
                         <RadioButton
+                            Checked="OnNavChecked"
+                            GroupName="Nav"
+                            Style="{StaticResource NavItem}"
+                            Tag="{x:Type pages:GanttPage}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Symbol="DataBarHorizontal24" />
+                                <TextBlock
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Text="Gantt" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton
                             Margin="10,22,10,1"
                             Checked="OnNavChecked"
                             GroupName="Nav"

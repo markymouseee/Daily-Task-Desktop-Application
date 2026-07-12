@@ -36,12 +36,12 @@
             Margin="0,14,0,6"
             FontSize="12"
             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-            Text="Estimated minutes" />
+            Text="Estimated hours" />
         <ui:NumberBox
             x:Name="EstimateBox"
-            Maximum="960"
+            Maximum="500"
             Minimum="0"
-            PlaceholderText="30"
+            PlaceholderText="2"
             SpinButtonPlacementMode="Inline" />
 
         <TextBlock

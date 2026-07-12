@@ -12,9 +12,9 @@ public partial class SubtaskEditWindow : FluentWindow
 
     private static readonly TeamMember Unassigned = new() { Id = 0, Name = "Unassigned" };
 
-    private readonly Subtask _subtask;
+    private readonly TaskItem _subtask;
 
-    public SubtaskEditWindow(Subtask subtask, bool developerFeatures, IReadOnlyList<TeamMember> team)
+    public SubtaskEditWindow(TaskItem subtask, bool developerFeatures, IReadOnlyList<TeamMember> team)
     {
         _subtask = subtask;
         InitializeComponent();
@@ -37,7 +37,7 @@ public partial class SubtaskEditWindow : FluentWindow
         BlockedBox.Text = subtask.BlockedReason ?? string.Empty;
         WhyBox.Text = subtask.WhyReason ?? string.Empty;
         ResumeBox.Text = subtask.ContextResumeNote ?? string.Empty;
-        GitBox.Text = subtask.GitLinkPattern ?? string.Empty;
+        GitBox.Text = subtask.GitLink ?? string.Empty;
 
         GitRow.Visibility = developerFeatures ? Visibility.Visible : Visibility.Collapsed;
         UpdateBlockedVisibility();
@@ -52,7 +52,7 @@ public partial class SubtaskEditWindow : FluentWindow
             return;
         }
 
-        BlockedRow.Visibility = StatusBox.SelectedIndex == (int)SubtaskStatus.Blocked
+        BlockedRow.Visibility = StatusBox.SelectedIndex == (int)WorkStatus.Blocked
             ? Visibility.Visible
             : Visibility.Collapsed;
     }
@@ -69,7 +69,7 @@ public partial class SubtaskEditWindow : FluentWindow
 
         _subtask.Title = title;
         _subtask.Priority = PriorityByIndex[Math.Clamp(PriorityBox.SelectedIndex, 0, 2)];
-        _subtask.Status = (SubtaskStatus)StatusBox.SelectedIndex;
+        _subtask.Status = (WorkStatus)StatusBox.SelectedIndex;
         _subtask.EstimatedHours = EstimateBox.Value is > 0 and var est ? est : null;
         _subtask.ActualHours = ActualBox.Value is > 0 and var act ? act : null;
         _subtask.StartDate = StartBox.SelectedDate;
@@ -80,11 +80,11 @@ public partial class SubtaskEditWindow : FluentWindow
         _subtask.WhyReason = Blank(WhyBox.Text);
         _subtask.ContextResumeNote = Blank(ResumeBox.Text);
 
-        _subtask.BlockedReason = _subtask.Status == SubtaskStatus.Blocked ? Blank(BlockedBox.Text) : null;
+        _subtask.BlockedReason = _subtask.Status == WorkStatus.Blocked ? Blank(BlockedBox.Text) : null;
 
         if (GitRow.Visibility == Visibility.Visible)
         {
-            _subtask.GitLinkPattern = Blank(GitBox.Text);
+            _subtask.GitLink = Blank(GitBox.Text);
         }
 
         DialogResult = true;

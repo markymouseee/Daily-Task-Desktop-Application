@@ -7,12 +7,12 @@ namespace DailyTasks.Views;
 
 public sealed class ProjectExporter : IProjectExporter
 {
-    public string? PromptForPath(Project project)
+    public string? PromptForPath(TaskItem head)
     {
         var dialog = new SaveFileDialog
         {
             Title = "Export SDLC to Excel",
-            FileName = $"{SafeFileName(project.TaskItem.Title)}_SDLC_{DateTime.Now:yyyyMMdd}.xlsx",
+            FileName = $"{SafeFileName(head.Title)}_SDLC_{DateTime.Now:yyyyMMdd}.xlsx",
             Filter = "Excel workbook (*.xlsx)|*.xlsx",
             DefaultExt = ".xlsx",
             AddExtension = true,
@@ -21,8 +21,8 @@ public sealed class ProjectExporter : IProjectExporter
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
 
-    public Task WriteAsync(Project project, string path) =>
-        Task.Run(() => ProjectWorkbook.Save(project, path));
+    public Task WriteAsync(TaskItem head, string path) =>
+        Task.Run(() => ProjectWorkbook.Save(head, path));
 
     private static string SafeFileName(string title)
     {

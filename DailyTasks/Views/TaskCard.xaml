@@ -19,6 +19,7 @@
     <!--  A task card. Applied implicitly wherever a TaskItemViewModel is rendered.  -->
     <DataTemplate DataType="{x:Type vm:TaskItemViewModel}">
         <Border
+            x:Name="CardRoot"
             Margin="0,0,0,10"
             Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
@@ -102,23 +103,6 @@
                                 Text="{Binding CategoryName}" />
                         </Border>
 
-                        <!--  Priority label  -->
-                        <StackPanel
-                            Margin="10,0,0,0"
-                            VerticalAlignment="Center"
-                            Orientation="Horizontal">
-                            <ui:SymbolIcon
-                                FontSize="12"
-                                Foreground="{Binding Priority, Converter={StaticResource PriorityToBrush}}"
-                                Symbol="Flag24" />
-                            <TextBlock
-                                Margin="4,0,0,0"
-                                VerticalAlignment="Center"
-                                FontSize="11"
-                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                Text="{Binding Priority}" />
-                        </StackPanel>
-
                         <!--  Git link (developer feature)  -->
                         <StackPanel
                             Margin="10,0,0,0"
@@ -180,34 +164,55 @@
 
                 <StackPanel
                     Grid.Column="3"
-                    Margin="0,0,10,0"
+                    Margin="0,0,12,0"
                     VerticalAlignment="Center"
                     Orientation="Horizontal">
-                    <ui:Button
-                        x:Name="FocusButton"
-                        Padding="8"
-                        AutomationProperties.Name="Start focus"
-                        Appearance="Transparent"
-                        Command="{Binding DataContext.StartFocusCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                        CommandParameter="{Binding}"
-                        Icon="{ui:SymbolIcon Play24}"
-                        ToolTip="Start a focus session" />
-                    <ui:Button
-                        Padding="8"
-                        AutomationProperties.Name="Edit task"
-                        Appearance="Transparent"
-                        Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                        CommandParameter="{Binding}"
-                        Icon="{ui:SymbolIcon Edit24}"
-                        ToolTip="Edit task" />
-                    <ui:Button
-                        Padding="8"
-                        AutomationProperties.Name="Delete task"
-                        Appearance="Transparent"
-                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                        CommandParameter="{Binding}"
-                        Icon="{ui:SymbolIcon Delete24}"
-                        ToolTip="Delete task" />
+
+                    <!--  Priority pill  -->
+                    <Border
+                        Padding="9,3"
+                        VerticalAlignment="Center"
+                        Background="{Binding Priority, Converter={StaticResource PriorityToBrush}, ConverterParameter=Fill}"
+                        CornerRadius="8">
+                        <TextBlock
+                            FontSize="11"
+                            FontWeight="SemiBold"
+                            Foreground="{Binding Priority, Converter={StaticResource PriorityToBrush}}"
+                            Text="{Binding Priority}" />
+                    </Border>
+
+                    <!--  Actions, revealed on hover  -->
+                    <StackPanel
+                        x:Name="Actions"
+                        Margin="6,0,0,0"
+                        Orientation="Horizontal"
+                        Visibility="Collapsed">
+                        <ui:Button
+                            x:Name="FocusButton"
+                            Padding="8"
+                            AutomationProperties.Name="Start focus"
+                            Appearance="Transparent"
+                            Command="{Binding DataContext.StartFocusCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}"
+                            Icon="{ui:SymbolIcon Play24}"
+                            ToolTip="Start a focus session" />
+                        <ui:Button
+                            Padding="8"
+                            AutomationProperties.Name="Edit task"
+                            Appearance="Transparent"
+                            Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}"
+                            Icon="{ui:SymbolIcon Edit24}"
+                            ToolTip="Edit task" />
+                        <ui:Button
+                            Padding="8"
+                            AutomationProperties.Name="Delete task"
+                            Appearance="Transparent"
+                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                            CommandParameter="{Binding}"
+                            Icon="{ui:SymbolIcon Delete24}"
+                            ToolTip="Delete task" />
+                    </StackPanel>
                 </StackPanel>
             </Grid>
         </Border>
@@ -217,6 +222,11 @@
             <DataTrigger Binding="{Binding Model.BigThreeDate, Converter={StaticResource IsToday}}" Value="True">
                 <Setter TargetName="AccentStrip" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
             </DataTrigger>
+
+            <!--  Action buttons appear on hover, keeping the resting card clean  -->
+            <Trigger SourceName="CardRoot" Property="IsMouseOver" Value="True">
+                <Setter TargetName="Actions" Property="Visibility" Value="Visible" />
+            </Trigger>
 
             <DataTrigger Binding="{Binding IsCompleted}" Value="True">
                 <Setter TargetName="TitleText" Property="TextDecorations" Value="Strikethrough" />

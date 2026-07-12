@@ -9,18 +9,18 @@ public readonly record struct PhaseSpan(Phase Phase, DateTime? Start, DateTime? 
 }
 
 /// <summary>
-/// Derives phase-level timeline spans from a project's subtasks. A phase's end is the
-/// latest subtask due date; its start is the earliest explicit subtask start, or — for
+/// Derives phase-level timeline spans from a methodology head's child tasks. A phase's end
+/// is the latest child due date; its start is the earliest explicit child start, or — for
 /// Waterfall, when no start is given — the end of the previous dated phase, so sequential
 /// work chains without every start being entered by hand.
 /// </summary>
 public static class GanttSchedule
 {
-    public static IReadOnlyList<PhaseSpan> PhaseSpans(Project project)
+    public static IReadOnlyList<PhaseSpan> PhaseSpans(TaskItem head)
     {
-        var ordered = project.Phases.OrderBy(p => p.Order).ToList();
-        var byPhase = project.Subtasks.ToLookup(s => s.PhaseId);
-        var waterfall = project.Methodology == Methodology.Waterfall;
+        var ordered = head.Phases.OrderBy(p => p.Order).ToList();
+        var byPhase = head.Children.ToLookup(s => s.PhaseId);
+        var waterfall = head.Methodology == Methodology.Waterfall;
 
         var spans = new List<PhaseSpan>(ordered.Count);
         DateTime? previousEnd = null;
@@ -63,7 +63,7 @@ public static class GanttSchedule
     /// A subtask's drawable [start, end]. End is its due (or start); start is its explicit
     /// start, or — for Waterfall — the phase's start, or its due as a last resort.
     /// </summary>
-    public static (DateTime? Start, DateTime? End) SubtaskSpan(Subtask subtask, PhaseSpan phaseSpan, bool isWaterfall)
+    public static (DateTime? Start, DateTime? End) SubtaskSpan(TaskItem subtask, PhaseSpan phaseSpan, bool isWaterfall)
     {
         var end = subtask.DueDate?.Date ?? subtask.StartDate?.Date;
 
@@ -79,8 +79,8 @@ public static class GanttSchedule
         return (start, end);
     }
 
-    /// <summary>Subtasks in timeline order: earliest start (or due) first, then priority.</summary>
-    public static IEnumerable<Subtask> OrderSubtasks(IEnumerable<Subtask> subtasks, PhaseSpan span) =>
+    /// <summary>Child tasks in timeline order: earliest start (or due) first, then priority.</summary>
+    public static IEnumerable<TaskItem> OrderSubtasks(IEnumerable<TaskItem> subtasks, PhaseSpan span) =>
         subtasks.OrderBy(s => s.StartDate ?? s.DueDate ?? span.Start ?? DateTime.MaxValue)
             .ThenByDescending(s => s.Priority);
 
@@ -88,16 +88,16 @@ public static class GanttSchedule
     /// A phase's single status for its bar: Done when everything's done, In Progress once any
     /// work has started, otherwise Todo (Upcoming).
     /// </summary>
-    public static SubtaskStatus AggregatePhaseStatus(IReadOnlyCollection<Subtask> subtasks)
+    public static WorkStatus AggregatePhaseStatus(IReadOnlyCollection<TaskItem> subtasks)
     {
         if (Progress.Of(subtasks).IsComplete)
         {
-            return SubtaskStatus.Done;
+            return WorkStatus.Done;
         }
 
-        return subtasks.Any(s => s.Status is SubtaskStatus.InProgress or SubtaskStatus.Review or SubtaskStatus.Done)
-            ? SubtaskStatus.InProgress
-            : SubtaskStatus.Todo;
+        return subtasks.Any(s => s.Status is WorkStatus.InProgress or WorkStatus.Review or WorkStatus.Done)
+            ? WorkStatus.InProgress
+            : WorkStatus.Todo;
     }
 
     /// <summary>

@@ -13,7 +13,7 @@ internal static class Palette
         {
             [TaskPriority.High] = Color.FromRgb(0xEF, 0x44, 0x44),
             [TaskPriority.Medium] = Color.FromRgb(0xF5, 0x9E, 0x0B),
-            [TaskPriority.Low] = Color.FromRgb(0x64, 0x74, 0x8B),
+            [TaskPriority.Low] = Color.FromRgb(0x63, 0x66, 0xF1),
         };
 
     public static SolidColorBrush Brush(Color color, byte alpha = 0xFF)
@@ -53,12 +53,21 @@ public sealed class HexToBrushConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+/// <summary>
+/// Priority colour. Pass ConverterParameter="Fill" for the translucent pill background,
+/// matching the category/status pill idiom.
+/// </summary>
 public sealed class PriorityToBrushConverter : IValueConverter
 {
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) =>
-        value is TaskPriority priority && Palette.Priority.TryGetValue(priority, out var color)
-            ? Palette.Brush(color)
-            : Brushes.Transparent;
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not TaskPriority priority || !Palette.Priority.TryGetValue(priority, out var color))
+        {
+            return Brushes.Transparent;
+        }
+
+        return parameter as string == "Fill" ? Palette.Brush(color, 0x2E) : Palette.Brush(color);
+    }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();
@@ -258,21 +267,21 @@ public sealed class FractionOfWidthConverter : IMultiValueConverter
         throw new NotSupportedException();
 }
 
-/// <summary>Fill colour for a subtask's status pill and its Kanban card accent.</summary>
+/// <summary>Fill colour for a task's status pill and its Kanban card accent.</summary>
 public sealed class SubtaskStatusToBrushConverter : IValueConverter
 {
-    private static readonly IReadOnlyDictionary<SubtaskStatus, SolidColorBrush> Brushes = new Dictionary<SubtaskStatus, SolidColorBrush>
+    private static readonly IReadOnlyDictionary<WorkStatus, SolidColorBrush> Brushes = new Dictionary<WorkStatus, SolidColorBrush>
     {
-        [SubtaskStatus.Todo] = Palette.Brush(Color.FromRgb(0x64, 0x74, 0x8B)),
-        [SubtaskStatus.InProgress] = Palette.Brush(Color.FromRgb(0x3B, 0x82, 0xF6)),
-        [SubtaskStatus.Review] = Palette.Brush(Color.FromRgb(0xA8, 0x55, 0xF7)),
-        [SubtaskStatus.Done] = Palette.Brush(Color.FromRgb(0x22, 0xC5, 0x5E)),
-        [SubtaskStatus.Blocked] = Palette.Brush(Color.FromRgb(0xEF, 0x44, 0x44)),
+        [WorkStatus.Todo] = Palette.Brush(Color.FromRgb(0x64, 0x74, 0x8B)),
+        [WorkStatus.InProgress] = Palette.Brush(Color.FromRgb(0x3B, 0x82, 0xF6)),
+        [WorkStatus.Review] = Palette.Brush(Color.FromRgb(0xA8, 0x55, 0xF7)),
+        [WorkStatus.Done] = Palette.Brush(Color.FromRgb(0x22, 0xC5, 0x5E)),
+        [WorkStatus.Blocked] = Palette.Brush(Color.FromRgb(0xEF, 0x44, 0x44)),
     };
 
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        var brush = value is SubtaskStatus s && Brushes.TryGetValue(s, out var b) ? b : Brushes[SubtaskStatus.Todo];
+        var brush = value is WorkStatus s && Brushes.TryGetValue(s, out var b) ? b : Brushes[WorkStatus.Todo];
 
         // "Fill" gives the translucent pill background, matching the category pill idiom.
         if (parameter as string == "Fill")

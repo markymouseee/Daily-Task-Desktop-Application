@@ -3,11 +3,10 @@ using DailyTasks.Models;
 namespace DailyTasks.Services;
 
 /// <summary>
-/// Opens the subtask editor dialog. Keeps WPF out of the detail view model, mirroring
-/// <see cref="ITaskEditor"/>. Mutates the passed subtask in place and reports whether
-/// the user saved.
+/// Opens the subtask editor dialog (a child task's fuller editor: status, dates, hours,
+/// assignee…). Mutates the passed task in place and reports whether the user saved.
 /// </summary>
 public interface ISubtaskEditor
 {
-    Task<bool> EditAsync(Subtask subtask, bool developerFeatures);
+    Task<bool> EditAsync(TaskItem subtask, bool developerFeatures);
 }

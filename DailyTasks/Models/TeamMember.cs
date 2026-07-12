@@ -17,5 +17,6 @@ public class TeamMember
     /// <summary>Avatar badge background, as "#RRGGBB".</summary>
     public string InitialsColorHex { get; set; } = "#3B82F6";
 
-    public ICollection<Subtask> Subtasks { get; } = [];
+    /// <summary>Tasks currently assigned to this member.</summary>
+    public ICollection<TaskItem> Tasks { get; } = [];
 }

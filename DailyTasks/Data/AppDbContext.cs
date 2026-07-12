@@ -3,7 +3,6 @@ using System.Text.Json;
 using DailyTasks.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace DailyTasks.Data;
 
@@ -15,11 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<InterruptionEvent> Interruptions => Set<InterruptionEvent>();
 
-    public DbSet<Project> Projects => Set<Project>();
-
     public DbSet<Phase> Phases => Set<Phase>();
-
-    public DbSet<Subtask> Subtasks => Set<Subtask>();
 
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
 
@@ -52,36 +47,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         task.Property(t => t.WhyReason).HasMaxLength(300);
         task.Property(t => t.ContextResumeNote).HasMaxLength(500);
         task.Property(t => t.GitLink).HasMaxLength(200);
+        task.Property(t => t.BlockedReason).HasMaxLength(300);
 
-        // Store enums as text so the database stays readable and is not
-        // silently reinterpreted if enum members are ever reordered.
+        // IsCompleted is a convenience over Status, not its own column.
+        task.Ignore(t => t.IsCompleted);
+
+        // Enums stored as text so the database stays readable and isn't silently
+        // reinterpreted if enum members are ever reordered.
         task.Property(t => t.Priority).HasConversion<string>().HasMaxLength(16);
 
-        // Default to "Simple" so rows that predate this column upgrade cleanly.
-        task.Property(t => t.TaskType)
+        task.Property(t => t.Status)
             .HasConversion<string>()
             .HasMaxLength(16)
-            .HasDefaultValue(TaskType.Simple);
+            .HasDefaultValue(WorkStatus.Todo);
 
-        // Default to "None" so rows that predate this column parse back cleanly on upgrade.
+        // Nullable: null = a plain, unstructured task.
+        task.Property(t => t.Methodology).HasConversion<string>().HasMaxLength(16);
+
         task.Property(t => t.Recurrence)
             .HasConversion<string>()
             .HasMaxLength(16)
             .HasDefaultValue(RecurrenceKind.None);
-
-        task.HasOne(t => t.Category)
-            .WithMany(c => c.Tasks)
-            .HasForeignKey(t => t.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        task.HasIndex(t => t.IsCompleted);
-        task.HasIndex(t => t.DueDate);
-
-        // ---- Projects: phases and subtasks ----
-
-        var project = modelBuilder.Entity<Project>();
-
-        project.Property(p => p.Methodology).HasConversion<string>().HasMaxLength(16);
 
         // Custom phase names ride along as a small JSON array; comparing the list
         // by value keeps EF's change tracking honest for a mutable reference type.
@@ -90,7 +76,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             v => v.Aggregate(0, (hash, s) => HashCode.Combine(hash, s.GetHashCode())),
             v => v.ToList());
 
-        project.Property(p => p.CustomPhases)
+        task.Property(t => t.CustomPhases)
             .HasConversion(
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
                 v => string.IsNullOrEmpty(v)
@@ -98,63 +84,50 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                     : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
             .Metadata.SetValueComparer(stringListComparer);
 
-        // One project per task; deleting the task tears down its whole plan.
-        project.HasOne(p => p.TaskItem)
-            .WithOne(t => t.Project!)
-            .HasForeignKey<Project>(p => p.TaskItemId)
+        task.HasOne(t => t.Category)
+            .WithMany(c => c.Tasks)
+            .HasForeignKey(t => t.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Self-referencing hierarchy; deleting a parent removes its whole subtree.
+        task.HasOne(t => t.Parent)
+            .WithMany(t => t.Children)
+            .HasForeignKey(t => t.ParentTaskId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        project.HasIndex(p => p.TaskItemId).IsUnique();
+        // A task outlives its phase (e.g. the phase is removed) by falling back to null.
+        task.HasOne(t => t.Phase)
+            .WithMany(p => p.Tasks)
+            .HasForeignKey(t => t.PhaseId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Removing a member unassigns their tasks rather than deleting the work.
+        task.HasOne(t => t.AssignedTo)
+            .WithMany(m => m.Tasks)
+            .HasForeignKey(t => t.AssignedToId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        task.HasIndex(t => t.DueDate);
+        task.HasIndex(t => t.ParentTaskId);
+        task.HasIndex(t => t.PhaseId);
+        task.HasIndex(t => t.AssignedToId);
 
         var phase = modelBuilder.Entity<Phase>();
 
         phase.Property(p => p.Name).IsRequired().HasMaxLength(100);
 
-        phase.HasOne(p => p.Project)
-            .WithMany(p => p.Phases)
-            .HasForeignKey(p => p.ProjectId)
+        phase.HasOne(p => p.OwnerTask)
+            .WithMany(t => t.Phases)
+            .HasForeignKey(p => p.OwnerTaskId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        phase.HasIndex(p => p.ProjectId);
-
-        var subtask = modelBuilder.Entity<Subtask>();
-
-        subtask.Property(s => s.Title).IsRequired().HasMaxLength(200);
-        subtask.Property(s => s.Priority).HasConversion<string>().HasMaxLength(16);
-        subtask.Property(s => s.Status).HasConversion<string>().HasMaxLength(16);
-        subtask.Property(s => s.BlockedReason).HasMaxLength(300);
-        subtask.Property(s => s.WhyReason).HasMaxLength(300);
-        subtask.Property(s => s.ContextResumeNote).HasMaxLength(500);
-        subtask.Property(s => s.GitLinkPattern).HasMaxLength(200);
-
-        subtask.HasOne(s => s.Project)
-            .WithMany(p => p.Subtasks)
-            .HasForeignKey(s => s.ProjectId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // A subtask outlives its phase (e.g. a phase is removed) by falling back
-        // to a null phase rather than vanishing with it.
-        subtask.HasOne(s => s.Phase)
-            .WithMany(p => p.Subtasks)
-            .HasForeignKey(s => s.PhaseId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        subtask.HasIndex(s => s.ProjectId);
-        subtask.HasIndex(s => s.PhaseId);
+        phase.HasIndex(p => p.OwnerTaskId);
 
         var member = modelBuilder.Entity<TeamMember>();
 
         member.Property(m => m.Name).IsRequired().HasMaxLength(100);
         member.Property(m => m.Role).HasMaxLength(60);
         member.Property(m => m.InitialsColorHex).IsRequired().HasMaxLength(9);
-
-        // Unassign a member's subtasks rather than deleting them when the member is removed.
-        subtask.HasOne(s => s.AssignedTo)
-            .WithMany(m => m.Subtasks)
-            .HasForeignKey(s => s.AssignedToId)
-            .OnDelete(DeleteBehavior.SetNull);
-
-        subtask.HasIndex(s => s.AssignedToId);
 
         var interruption = modelBuilder.Entity<InterruptionEvent>();
 

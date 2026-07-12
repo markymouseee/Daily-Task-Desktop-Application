@@ -40,84 +40,55 @@
                     <TextBlock x:Name="SubheadingText" Style="{StaticResource PageSubheading}" />
                 </StackPanel>
 
-                <ui:Button
+                <StackPanel
                     Grid.Column="1"
-                    Padding="16,10"
                     VerticalAlignment="Center"
-                    Appearance="Primary"
-                    Click="OnNewTask"
-                    Content="New Task"
-                    FontSize="14"
-                    Icon="{ui:SymbolIcon Add24}" />
+                    Orientation="Horizontal">
+                    <ui:Button
+                        Padding="16,10"
+                        Appearance="Primary"
+                        Click="OnNewTask"
+                        Content="New Task"
+                        FontSize="14"
+                        Icon="{ui:SymbolIcon Add24}" />
+                    <ui:Button
+                        x:Name="KebabButton"
+                        Margin="8,0,0,0"
+                        Padding="11,10"
+                        Appearance="Secondary"
+                        Click="OnKebab"
+                        Icon="{ui:SymbolIcon MoreHorizontal24}"
+                        ToolTip="More">
+                        <ui:Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem
+                                    Command="{Binding PlacementTarget.DataContext.NewProjectFromMenuCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                    Header="New project…" />
+                                <MenuItem
+                                    Command="{Binding PlacementTarget.DataContext.ManageTeamCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                    Header="Manage team…" />
+                            </ContextMenu>
+                        </ui:Button.ContextMenu>
+                    </ui:Button>
+                </StackPanel>
             </Grid>
 
             <!--  Quick add  -->
             <StackPanel Grid.Row="1" Margin="0,0,0,20">
-                <Border
-                    Padding="8"
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="12">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <ui:TextBox
-                            x:Name="QuickAddBox"
-                            Grid.Column="0"
-                            Margin="0,0,8,0"
-                            VerticalAlignment="Center"
-                            Icon="{ui:SymbolIcon Add24}"
-                            PlaceholderText="Add a task and press Enter…  try “call dentist tomorrow 3pm high priority”"
-                            Text="{Binding NewTaskTitle, UpdateSourceTrigger=PropertyChanged}">
-                            <ui:TextBox.InputBindings>
-                                <KeyBinding Key="Enter" Command="{Binding AddTaskCommand}" />
-                            </ui:TextBox.InputBindings>
-                        </ui:TextBox>
-
-                        <ComboBox
-                            Grid.Column="1"
-                            Width="118"
-                            Margin="0,0,8,0"
-                            VerticalAlignment="Center"
-                            DisplayMemberPath="Name"
-                            ItemsSource="{Binding Categories}"
-                            SelectedItem="{Binding NewTaskCategory}"
-                            ToolTip="Category" />
-
-                        <ComboBox
-                            Grid.Column="2"
-                            Width="108"
-                            Margin="0,0,8,0"
-                            VerticalAlignment="Center"
-                            ItemsSource="{Binding Priorities}"
-                            SelectedItem="{Binding NewTaskPriority}"
-                            ToolTip="Priority" />
-
-                        <DatePicker
-                            Grid.Column="3"
-                            Width="140"
-                            Margin="0,0,8,0"
-                            VerticalAlignment="Center"
-                            SelectedDate="{Binding NewTaskDueDate}"
-                            ToolTip="Due date" />
-
-                        <ui:Button
-                            Grid.Column="4"
-                            Padding="14,8"
-                            VerticalAlignment="Center"
-                            Appearance="Primary"
-                            Command="{Binding AddTaskCommand}"
-                            Content="Add"
-                            Icon="{ui:SymbolIcon Add24}" />
-                    </Grid>
-                </Border>
+                <!--  Clean, prominent quick-add. Type naturally — "call dentist tomorrow 3pm
+                      high priority" — the parser fills in the date, priority and category.  -->
+                <ui:TextBox
+                    x:Name="QuickAddBox"
+                    Padding="8,10"
+                    VerticalAlignment="Center"
+                    FontSize="14"
+                    Icon="{ui:SymbolIcon Search24}"
+                    PlaceholderText="Quick add a task…"
+                    Text="{Binding NewTaskTitle, UpdateSourceTrigger=PropertyChanged}">
+                    <ui:TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding AddTaskCommand}" />
+                    </ui:TextBox.InputBindings>
+                </ui:TextBox>
 
                 <!--  Stale-task nudge  -->
                 <Border
@@ -273,9 +244,11 @@
             <!--  Task cards  -->
             <Grid Grid.Row="2">
                 <ScrollViewer
+                    x:Name="TasksScroll"
                     Margin="0,0,-12,0"
                     Padding="0,0,12,0"
                     HorizontalScrollBarVisibility="Disabled"
+                    ScrollChanged="OnTasksScrollChanged"
                     VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <!--  Today's Big 3, pinned above everything else  -->
@@ -451,6 +424,19 @@
                         Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                         Text="{Binding EmptyMessage}" />
                 </StackPanel>
+
+                <!--  Scroll-down affordance, shown only when there's more below the fold  -->
+                <ui:Button
+                    x:Name="ScrollDownButton"
+                    Margin="0,0,0,10"
+                    Padding="10"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Appearance="Secondary"
+                    Click="OnScrollDown"
+                    Icon="{ui:SymbolIcon ChevronDown24}"
+                    ToolTip="Scroll down"
+                    Visibility="Collapsed" />
             </Grid>
         </Grid>
 

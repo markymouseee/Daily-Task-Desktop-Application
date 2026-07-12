@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using DailyTasks.Services;
 using DailyTasks.ViewModels;
 using Wpf.Ui.Abstractions.Controls;
@@ -36,6 +37,27 @@ public partial class TodayPage : Page, INavigationAware
 
     private void OnNewTask(object sender, RoutedEventArgs e) => QuickAddBox.Focus();
 
+    private void OnKebab(object sender, RoutedEventArgs e)
+    {
+        if (KebabButton.ContextMenu is { } menu)
+        {
+            menu.PlacementTarget = KebabButton;
+            menu.Placement = PlacementMode.Bottom;
+            menu.IsOpen = true;
+        }
+    }
+
+    private void OnScrollDown(object sender, RoutedEventArgs e) =>
+        TasksScroll.ScrollToVerticalOffset(TasksScroll.VerticalOffset + (TasksScroll.ViewportHeight * 0.9));
+
+    private void OnTasksScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        var moreBelow = TasksScroll.ScrollableHeight > 1
+            && TasksScroll.VerticalOffset < TasksScroll.ScrollableHeight - 1;
+
+        ScrollDownButton.Visibility = moreBelow ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private void UpdateHeader()
     {
         GreetingText.Text = $"{Greeting()}, {_settings.DisplayName}";
@@ -48,8 +70,8 @@ public partial class TodayPage : Page, INavigationAware
 
         var parts = new List<string>
         {
-            DateTime.Now.ToString("dddd, d MMMM"),
-            taskCount == 1 ? "1 task" : $"{taskCount} tasks",
+            DateTime.Now.ToString("dddd, MMMM d"),
+            taskCount == 1 ? "1 task today" : $"{taskCount} tasks today",
         };
 
         if (_viewModel.TodayProjects.Count > 0)

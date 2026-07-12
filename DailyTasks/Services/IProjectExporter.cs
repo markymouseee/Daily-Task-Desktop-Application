@@ -9,8 +9,8 @@ namespace DailyTasks.Services;
 public interface IProjectExporter
 {
     /// <summary>Shows a Save dialog and returns the chosen path, or null if cancelled.</summary>
-    string? PromptForPath(Project project);
+    string? PromptForPath(TaskItem head);
 
     /// <summary>Writes the workbook to the path on a background thread.</summary>
-    Task WriteAsync(Project project, string path);
+    Task WriteAsync(TaskItem head, string path);
 }

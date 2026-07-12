@@ -29,18 +29,8 @@ public enum RecurrenceKind
 }
 
 /// <summary>
-/// Whether a <see cref="TaskItem"/> is a flat checklist item or the head of a
-/// structured project with phases and subtasks.
-/// </summary>
-public enum TaskType
-{
-    Simple = 0,
-    Project = 1,
-}
-
-/// <summary>
-/// The SDLC shape of a project. Drives the default phase set, the detail view,
-/// and the phase-gating rules.
+/// The SDLC shape of a methodology-organized task. Drives the default phase set,
+/// the detail view, and the phase-gating rules.
 /// </summary>
 public enum Methodology
 {
@@ -52,10 +42,11 @@ public enum Methodology
 }
 
 /// <summary>
-/// Where a subtask sits in its workflow. Ordered so a Kanban board reads
-/// left-to-right and a descending sort surfaces the least-finished work first.
+/// A task's workflow state. Ordered so a Kanban board reads left-to-right and a
+/// descending sort surfaces the least-finished work first. Applies to every task;
+/// for plain tasks only Todo/Done are used (via the completion checkbox).
 /// </summary>
-public enum SubtaskStatus
+public enum WorkStatus
 {
     Todo = 0,
     InProgress = 1,

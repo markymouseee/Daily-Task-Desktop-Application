@@ -15,7 +15,7 @@ public partial class EditTaskWindow : FluentWindow
 
         TitleBox.Text = task.Title;
         WhyBox.Text = task.WhyReason ?? string.Empty;
-        EstimateBox.Value = task.EstimatedMinutes;
+        EstimateBox.Value = task.EstimatedHours;
         ResumeBox.Text = task.ContextResumeNote ?? string.Empty;
         GitBox.Text = task.GitLink ?? string.Empty;
         RecurrenceBox.SelectedIndex = (int)task.Recurrence;
@@ -35,7 +35,7 @@ public partial class EditTaskWindow : FluentWindow
 
         _task.Title = title;
         _task.WhyReason = string.IsNullOrWhiteSpace(WhyBox.Text) ? null : WhyBox.Text.Trim();
-        _task.EstimatedMinutes = EstimateBox.Value is > 0 and var v ? (int)v : null;
+        _task.EstimatedHours = EstimateBox.Value is > 0 and var v ? v : null;
         _task.ContextResumeNote = string.IsNullOrWhiteSpace(ResumeBox.Text) ? null : ResumeBox.Text.Trim();
         _task.Recurrence = (RecurrenceKind)RecurrenceBox.SelectedIndex;
 

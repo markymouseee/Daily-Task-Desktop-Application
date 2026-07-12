@@ -23,9 +23,9 @@ public partial class RecapWindow : FluentWindow
             SlippedRow.Visibility = Visibility.Collapsed;
         }
 
-        if (stats.EstimatedMinutes > 0 || stats.ActualMinutes > 0)
+        if (stats.EstimatedHours > 0 || stats.ActualHours > 0)
         {
-            TimeLine.Text = $"Estimated {stats.EstimatedMinutes} min · actually tracked {stats.ActualMinutes} min";
+            TimeLine.Text = $"Estimated {stats.EstimatedHours:0.#}h · actually tracked {stats.ActualHours:0.#}h";
         }
         else
         {

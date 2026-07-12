@@ -14,9 +14,9 @@ public sealed class RecapStats
 
     public int SlippedOpenCount { get; init; }
 
-    public int EstimatedMinutes { get; init; }
+    public double EstimatedHours { get; init; }
 
-    public int ActualMinutes { get; init; }
+    public double ActualHours { get; init; }
 
     public int InterruptionCount { get; init; }
 
@@ -65,7 +65,8 @@ public sealed class RecapService(
 
     private async Task<RecapStats> BuildStatsAsync(DateTime today)
     {
-        var all = await tasks.GetAllAsync();
+        var roots = await tasks.GetRootsAsync();
+        var all = roots.SelectMany(r => TaskTree.Descendants(r).Prepend(r)).ToList();
 
         var planned = all.Where(t => t.DueDate?.Date == today).ToList();
         var completedToday = all.Where(t => t.CompletedAt?.Date == today).ToList();
@@ -84,8 +85,8 @@ public sealed class RecapService(
             CompletedCount = completedToday.Count,
             SlippedCategory = slipped?.Key,
             SlippedOpenCount = slipped?.Count() ?? 0,
-            EstimatedMinutes = completedToday.Sum(t => t.EstimatedMinutes ?? 0),
-            ActualMinutes = completedToday.Sum(t => t.ActualMinutes ?? 0),
+            EstimatedHours = completedToday.Sum(t => t.EstimatedHours ?? 0),
+            ActualHours = completedToday.Sum(t => t.ActualHours ?? 0),
             InterruptionCount = events.Count,
             InterruptionMinutesLost = events.Sum(i => i.MinutesLost),
         };

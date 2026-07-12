@@ -1,0 +1,68 @@
+<Page
+    x:Class="DailyTasks.Views.Pages.GanttPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:views="clr-namespace:DailyTasks.Views"
+    Title="Gantt">
+
+    <Grid Margin="28,16,28,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="0,0,0,18">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Style="{StaticResource PageHeading}" Text="Gantt" />
+                <TextBlock Style="{StaticResource PageSubheading}" Text="Visualize a project's phases and subtasks on a timeline." />
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Visibility="{Binding IsEmpty, Converter={StaticResource InverseBoolToVisibility}}">
+                <TextBlock
+                    Margin="0,0,10,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Project" />
+                <ComboBox
+                    MinWidth="220"
+                    VerticalAlignment="Center"
+                    DisplayMemberPath="TaskItem.Title"
+                    ItemsSource="{Binding Projects}"
+                    SelectedItem="{Binding SelectedProject}" />
+            </StackPanel>
+        </Grid>
+
+        <views:GanttChart
+            Grid.Row="1"
+            DataContext="{Binding Gantt}"
+            Visibility="{Binding DataContext.IsEmpty, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource InverseBoolToVisibility}}" />
+
+        <StackPanel
+            Grid.Row="1"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
+            <ui:SymbolIcon
+                HorizontalAlignment="Center"
+                FontSize="40"
+                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                Symbol="DataBarHorizontal24" />
+            <TextBlock
+                Margin="0,12,0,0"
+                HorizontalAlignment="Center"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="No projects yet. Create one to see its timeline." />
+        </StackPanel>
+    </Grid>
+</Page>

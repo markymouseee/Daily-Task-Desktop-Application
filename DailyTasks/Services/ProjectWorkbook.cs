@@ -15,41 +15,41 @@ public static class ProjectWorkbook
     private static readonly string[] Headers =
         ["Phase", "Subtask", "Priority", "Status", "Due Date", "Est. Hours", "Actual Hours", "Blocked Reason", "Notes / Why"];
 
-    public static void Save(Project project, string path)
+    public static void Save(TaskItem head, string path)
     {
         using var workbook = new XLWorkbook();
 
-        if (project.Methodology == Methodology.Iterative && project.IterationCount is > 0)
+        if (head.Methodology == Methodology.Iterative && head.IterationCount is > 0)
         {
-            for (var iteration = 1; iteration <= project.IterationCount; iteration++)
+            for (var iteration = 1; iteration <= head.IterationCount; iteration++)
             {
-                var slice = project.Subtasks.Where(s => s.IterationNumber == iteration).ToList();
-                BuildSheet(workbook, $"Iteration {iteration}", $"{project.TaskItem.Title} — Iteration {iteration}", project, slice);
+                var slice = head.Children.Where(s => s.IterationNumber == iteration).ToList();
+                BuildSheet(workbook, $"Iteration {iteration}", $"{head.Title} — Iteration {iteration}", head, slice);
             }
 
-            var unassigned = project.Subtasks.Where(s => s.IterationNumber is null).ToList();
+            var unassigned = head.Children.Where(s => s.IterationNumber is null).ToList();
             if (unassigned.Count > 0)
             {
-                BuildSheet(workbook, "Unassigned", $"{project.TaskItem.Title} — Unassigned", project, unassigned);
+                BuildSheet(workbook, "Unassigned", $"{head.Title} — Unassigned", head, unassigned);
             }
         }
         else
         {
-            BuildSheet(workbook, SheetName(project.TaskItem.Title), project.TaskItem.Title, project, project.Subtasks.ToList());
+            BuildSheet(workbook, SheetName(head.Title), head.Title, head, head.Children.ToList());
         }
 
-        BuildGanttSheet(workbook, project);
+        BuildGanttSheet(workbook, head);
 
         workbook.SaveAs(path);
     }
 
-    private static void BuildSheet(XLWorkbook workbook, string sheetName, string title, Project project, IReadOnlyList<Subtask> subtasks)
+    private static void BuildSheet(XLWorkbook workbook, string sheetName, string title, TaskItem head, IReadOnlyList<TaskItem> subtasks)
     {
         var ws = workbook.Worksheets.Add(UniqueName(workbook, sheetName));
 
         // ---- title ----
         var titleCell = ws.Cell(1, 1);
-        titleCell.Value = $"{title}  ·  {project.Methodology}";
+        titleCell.Value = $"{title}  ·  {head.Methodology}";
         titleCell.Style.Font.Bold = true;
         titleCell.Style.Font.FontSize = 16;
         ws.Range(1, 1, 1, Columns).Merge();
@@ -77,7 +77,7 @@ public static class ProjectWorkbook
 
         var row = headerRow + 1;
 
-        foreach (var (groupName, items) in GroupsFor(project, subtasks))
+        foreach (var (groupName, items) in GroupsFor(head, subtasks))
         {
             row = WriteGroup(ws, row, groupName, items);
         }
@@ -106,7 +106,7 @@ public static class ProjectWorkbook
         ws.Range(row, 2, row, Columns).Merge();
     }
 
-    private static int WriteGroup(IXLWorksheet ws, int row, string groupName, IReadOnlyList<Subtask> items)
+    private static int WriteGroup(IXLWorksheet ws, int row, string groupName, IReadOnlyList<TaskItem> items)
     {
         // Section header spanning the table.
         var header = ws.Cell(row, 1);
@@ -164,9 +164,9 @@ public static class ProjectWorkbook
     /// Phase-grouped for methodologies with phases; status-grouped for Kanban. Phased
     /// projects list every phase in order (even empty ones) to mirror the full SDLC.
     /// </summary>
-    private static IEnumerable<(string Name, IReadOnlyList<Subtask> Items)> GroupsFor(Project project, IReadOnlyList<Subtask> subtasks)
+    private static IEnumerable<(string Name, IReadOnlyList<TaskItem> Items)> GroupsFor(TaskItem head, IReadOnlyList<TaskItem> subtasks)
     {
-        var phases = project.Phases.OrderBy(p => p.Order).ToList();
+        var phases = head.Phases.OrderBy(p => p.Order).ToList();
 
         if (phases.Count > 0)
         {
@@ -185,7 +185,7 @@ public static class ProjectWorkbook
         }
 
         // Kanban: group by status, skipping empty columns.
-        foreach (var status in new[] { SubtaskStatus.Todo, SubtaskStatus.InProgress, SubtaskStatus.Review, SubtaskStatus.Blocked, SubtaskStatus.Done })
+        foreach (var status in new[] { WorkStatus.Todo, WorkStatus.InProgress, WorkStatus.Review, WorkStatus.Blocked, WorkStatus.Done })
         {
             var items = subtasks.Where(s => s.Status == status).ToList();
             if (items.Count > 0)
@@ -195,22 +195,22 @@ public static class ProjectWorkbook
         }
     }
 
-    private static XLColor StatusFill(SubtaskStatus status) => status switch
+    private static XLColor StatusFill(WorkStatus status) => status switch
     {
-        SubtaskStatus.Done => XLColor.FromHtml("#C6EFCE"),
-        SubtaskStatus.InProgress => XLColor.FromHtml("#FFEB9C"),
-        SubtaskStatus.Review => XLColor.FromHtml("#BDD7EE"),
-        SubtaskStatus.Blocked => XLColor.FromHtml("#FFC7CE"),
+        WorkStatus.Done => XLColor.FromHtml("#C6EFCE"),
+        WorkStatus.InProgress => XLColor.FromHtml("#FFEB9C"),
+        WorkStatus.Review => XLColor.FromHtml("#BDD7EE"),
+        WorkStatus.Blocked => XLColor.FromHtml("#FFC7CE"),
         _ => XLColor.FromHtml("#D9D9D9"),
     };
 
-    private static string StatusText(SubtaskStatus status) => status switch
+    private static string StatusText(WorkStatus status) => status switch
     {
-        SubtaskStatus.Todo => "To Do",
-        SubtaskStatus.InProgress => "In Progress",
-        SubtaskStatus.Review => "Review",
-        SubtaskStatus.Done => "Done",
-        SubtaskStatus.Blocked => "Blocked",
+        WorkStatus.Todo => "To Do",
+        WorkStatus.InProgress => "In Progress",
+        WorkStatus.Review => "Review",
+        WorkStatus.Done => "Done",
+        WorkStatus.Blocked => "Blocked",
         _ => status.ToString(),
     };
 
@@ -222,13 +222,13 @@ public static class ProjectWorkbook
 
     private const int GanttFirstWeekColumn = 9; // Task … Actual Hours occupy 1–8
 
-    private static void BuildGanttSheet(XLWorkbook workbook, Project project)
+    private static void BuildGanttSheet(XLWorkbook workbook, TaskItem head)
     {
         var ws = workbook.Worksheets.Add(UniqueName(workbook, "Gantt"));
-        var isWaterfall = project.Methodology == Methodology.Waterfall;
+        var isWaterfall = head.Methodology == Methodology.Waterfall;
 
-        var spans = GanttSchedule.PhaseSpans(project);
-        var byPhase = project.Subtasks.ToLookup(s => s.PhaseId);
+        var spans = GanttSchedule.PhaseSpans(head);
+        var byPhase = head.Children.ToLookup(s => s.PhaseId);
         var range = GanttSchedule.DateRange(spans);
 
         var rangeStart = GanttTimelineCalculator.StartOfWeek(range?.Start ?? DateTime.Today);
@@ -249,7 +249,7 @@ public static class ProjectWorkbook
 
         // Title.
         var title = ws.Cell(1, 1);
-        title.Value = $"{project.TaskItem.Title}  ·  {project.Methodology} — Gantt";
+        title.Value = $"{head.Title}  ·  {head.Methodology} — Gantt";
         title.Style.Font.Bold = true;
         title.Style.Font.FontSize = 14;
         ws.Range(1, 1, 1, lastColumn).Merge();
@@ -324,10 +324,10 @@ public static class ProjectWorkbook
 
         foreach (var (label, status) in new[]
         {
-            ("Done", SubtaskStatus.Done),
-            ("In Progress", SubtaskStatus.InProgress),
-            ("Blocked", SubtaskStatus.Blocked),
-            ("Upcoming", SubtaskStatus.Todo),
+            ("Done", WorkStatus.Done),
+            ("In Progress", WorkStatus.InProgress),
+            ("Blocked", WorkStatus.Blocked),
+            ("Upcoming", WorkStatus.Todo),
         })
         {
             ws.Cell(row, 1).Style.Fill.BackgroundColor = TimelineFill(status);
@@ -352,7 +352,7 @@ public static class ProjectWorkbook
         ws.SheetView.Freeze(headerRow, 8);
     }
 
-    private static void FillTimeline(IXLWorksheet ws, int row, List<DateTime> weeks, DateTime? start, DateTime? end, SubtaskStatus status)
+    private static void FillTimeline(IXLWorksheet ws, int row, List<DateTime> weeks, DateTime? start, DateTime? end, WorkStatus status)
     {
         if (start is null || end is null)
         {
@@ -392,12 +392,12 @@ public static class ProjectWorkbook
     }
 
     /// <summary>Vivid in-app status colours, so the week block reads as a real Gantt bar.</summary>
-    private static XLColor TimelineFill(SubtaskStatus status) => status switch
+    private static XLColor TimelineFill(WorkStatus status) => status switch
     {
-        SubtaskStatus.Done => XLColor.FromHtml("#22C55E"),
-        SubtaskStatus.InProgress => XLColor.FromHtml("#3B82F6"),
-        SubtaskStatus.Review => XLColor.FromHtml("#3B82F6"),
-        SubtaskStatus.Blocked => XLColor.FromHtml("#EF4444"),
+        WorkStatus.Done => XLColor.FromHtml("#22C55E"),
+        WorkStatus.InProgress => XLColor.FromHtml("#3B82F6"),
+        WorkStatus.Review => XLColor.FromHtml("#3B82F6"),
+        WorkStatus.Blocked => XLColor.FromHtml("#EF4444"),
         _ => XLColor.FromHtml("#64748B"),
     };
 
