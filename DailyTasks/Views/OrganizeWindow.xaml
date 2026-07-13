@@ -4,8 +4,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="Organize"
-    Width="520"
-    MaxHeight="760"
+    Width="560"
+    MaxHeight="820"
     Background="{DynamicResource ApplicationBackgroundBrush}"
     ExtendsContentIntoTitleBar="True"
     FontFamily="Segoe UI Variable Text"
@@ -44,48 +44,27 @@
                 Margin="0,0,0,10"
                 FontSize="13"
                 Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                Text="Give this task a methodology to unlock phase grouping, the Gantt view and Excel export."
+                Text="Pick a methodology to unlock phase grouping, the right chart and Excel export. The visualization is chosen automatically to fit the process."
                 TextWrapping="Wrap" />
 
-            <RadioButton x:Name="WaterfallRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M" IsChecked="True">
-                <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="Waterfall" />
-                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Requirements → Design → Implementation → Testing → Deployment → Maintenance, each locked until the previous is 100% done." TextWrapping="Wrap" />
-                </StackPanel>
-            </RadioButton>
-            <RadioButton x:Name="AgileRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M">
-                <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="Agile" />
-                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Backlog, Sprint, Review, Done — grouping without hard gating." TextWrapping="Wrap" />
-                </StackPanel>
-            </RadioButton>
-            <RadioButton x:Name="IterativeRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M">
-                <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="Iterative" />
-                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Repeat Plan → Build → Test → Review across a number of iterations." TextWrapping="Wrap" />
-                </StackPanel>
-            </RadioButton>
-            <RadioButton x:Name="KanbanRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M">
-                <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="Kanban" />
-                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="A board — To Do, In Progress, Review, Done. No locking." TextWrapping="Wrap" />
-                </StackPanel>
-            </RadioButton>
-            <RadioButton x:Name="CustomRadio" Margin="0,0,0,6" Checked="OnMethodologyChanged" GroupName="M">
-                <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="Custom" />
-                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Your own phase names, in order." TextWrapping="Wrap" />
-                </StackPanel>
-            </RadioButton>
+            <ScrollViewer MaxHeight="440" VerticalScrollBarVisibility="Auto">
+                <!--  Grouped methodology options are generated in code-behind.  -->
+                <StackPanel x:Name="MethodologyList" Margin="0,0,10,0" />
+            </ScrollViewer>
 
-            <StackPanel x:Name="IterationRow" Margin="0,10,0,0" Visibility="Collapsed">
-                <TextBlock Margin="0,0,0,6" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Number of iterations" />
+            <StackPanel x:Name="IterationRow" Margin="0,12,0,0" Visibility="Collapsed">
+                <TextBlock x:Name="IterationLabel" Margin="0,0,0,6" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Number of iterations" />
                 <ui:NumberBox x:Name="IterationCountBox" Width="140" HorizontalAlignment="Left" Maximum="20" Minimum="1" SpinButtonPlacementMode="Inline" Value="3" />
             </StackPanel>
 
-            <StackPanel x:Name="CustomPhasesRow" Margin="0,10,0,0" Visibility="Collapsed">
-                <TextBlock Margin="0,0,0,6" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Phase names — one per line, in order" />
-                <ui:TextBox x:Name="CustomPhasesBox" MinHeight="90" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="Discovery&#x0a;Prototype&#x0a;Build&#x0a;Launch" />
+            <StackPanel x:Name="SprintLengthRow" Margin="0,12,0,0" Visibility="Collapsed">
+                <TextBlock Margin="0,0,0,6" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Sprint length (days)" />
+                <ui:NumberBox x:Name="SprintLengthBox" Width="140" HorizontalAlignment="Left" Maximum="60" Minimum="1" SpinButtonPlacementMode="Inline" Value="14" />
+            </StackPanel>
+
+            <StackPanel x:Name="WipRow" Margin="0,12,0,0" Visibility="Collapsed">
+                <TextBlock Margin="0,0,0,6" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="In-progress WIP limit (leave empty for none)" />
+                <ui:NumberBox x:Name="WipLimitBox" Width="140" HorizontalAlignment="Left" ClearButtonEnabled="True" Maximum="20" Minimum="1" SpinButtonPlacementMode="Inline" />
             </StackPanel>
         </StackPanel>
 

@@ -246,25 +246,25 @@
                         <TextBlock
                             Margin="22,20,0,6"
                             Style="{StaticResource NavGroupLabel}"
-                            Text="ANALYTICS" />
+                            Text="PROJECTS" />
 
                         <RadioButton
                             Checked="OnNavChecked"
                             GroupName="Nav"
                             Style="{StaticResource NavItem}"
-                            Tag="{x:Type pages:InsightsPage}">
+                            Tag="{x:Type pages:ProjectsPage}">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon
                                     VerticalAlignment="Center"
                                     FontSize="18"
                                     Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
-                                    Symbol="DataTrending24" />
+                                    Symbol="Flowchart24" />
                                 <TextBlock
                                     Margin="12,0,0,0"
                                     VerticalAlignment="Center"
                                     FontSize="14"
                                     Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
-                                    Text="Insights" />
+                                    Text="Projects" />
                             </StackPanel>
                         </RadioButton>
 
@@ -285,6 +285,51 @@
                                     FontSize="14"
                                     Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
                                     Text="Gantt" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton
+                            Checked="OnNavChecked"
+                            GroupName="Nav"
+                            Style="{StaticResource NavItem}"
+                            Tag="{x:Type pages:CalendarPage}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Symbol="CalendarLtr24" />
+                                <TextBlock
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Text="Calendar" />
+                            </StackPanel>
+                        </RadioButton>
+
+                        <TextBlock
+                            Margin="22,20,0,6"
+                            Style="{StaticResource NavGroupLabel}"
+                            Text="ANALYTICS" />
+
+                        <RadioButton
+                            Checked="OnNavChecked"
+                            GroupName="Nav"
+                            Style="{StaticResource NavItem}"
+                            Tag="{x:Type pages:InsightsPage}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon
+                                    VerticalAlignment="Center"
+                                    FontSize="18"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Symbol="DataTrending24" />
+                                <TextBlock
+                                    Margin="12,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"
+                                    Text="Insights" />
                             </StackPanel>
                         </RadioButton>
 

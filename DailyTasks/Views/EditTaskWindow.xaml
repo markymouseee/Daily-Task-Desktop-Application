@@ -29,6 +29,21 @@
             Margin="0,14,0,6"
             FontSize="12"
             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+            Text="Priority" />
+        <ComboBox
+            x:Name="PriorityBox"
+            Width="200"
+            HorizontalAlignment="Left"
+            SelectedIndex="1">
+            <ComboBoxItem Content="High" />
+            <ComboBoxItem Content="Medium" />
+            <ComboBoxItem Content="Low" />
+        </ComboBox>
+
+        <TextBlock
+            Margin="0,14,0,6"
+            FontSize="12"
+            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
             Text="Why does this matter?  (shown on the card)" />
         <ui:TextBox x:Name="WhyBox" PlaceholderText="so I don't get charged a late fee" />
 
