@@ -47,7 +47,22 @@
         <views:GanttChart
             Grid.Row="1"
             DataContext="{Binding Gantt}"
-            Visibility="{Binding DataContext.IsEmpty, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource InverseBoolToVisibility}}" />
+            Visibility="{Binding DataContext.ShowSequential, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource BoolToVisibility}}" />
+
+        <views:VShapedGanttChart
+            Grid.Row="1"
+            DataContext="{Binding VGantt}"
+            Visibility="{Binding DataContext.ShowV, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource BoolToVisibility}}" />
+
+        <views:CyclicalGanttChart
+            Grid.Row="1"
+            DataContext="{Binding CycleGantt}"
+            Visibility="{Binding DataContext.ShowCyclical, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource BoolToVisibility}}" />
+
+        <views:AgileGanttChart
+            Grid.Row="1"
+            DataContext="{Binding AgileGantt}"
+            Visibility="{Binding DataContext.ShowAgileGantt, RelativeSource={RelativeSource AncestorType=Page}, Converter={StaticResource BoolToVisibility}}" />
 
         <StackPanel
             Grid.Row="1"

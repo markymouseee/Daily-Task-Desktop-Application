@@ -1,0 +1,190 @@
+<Page
+    x:Class="DailyTasks.Views.Pages.CalendarPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:DailyTasks.ViewModels"
+    Title="Calendar">
+
+    <Grid Margin="28,16,28,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Header  -->
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Style="{StaticResource PageHeading}" Text="Calendar" />
+                <TextBlock Style="{StaticResource PageSubheading}" Text="Every task and activity by date, so nothing slips." />
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <TextBlock
+                    MinWidth="150"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Right"
+                    FontFamily="Segoe UI Variable Display"
+                    FontSize="17"
+                    FontWeight="SemiBold"
+                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                    Text="{Binding MonthLabel}" />
+                <ui:Button Margin="12,0,0,0" Padding="9,6" Command="{Binding PreviousMonthCommand}" Icon="{ui:SymbolIcon ChevronLeft24}" ToolTip="Previous month" />
+                <ui:Button Margin="6,0,0,0" Padding="12,6" Command="{Binding GoTodayCommand}" Content="Today" />
+                <ui:Button Margin="6,0,0,0" Padding="9,6" Command="{Binding NextMonthCommand}" Icon="{ui:SymbolIcon ChevronRight24}" ToolTip="Next month" />
+            </StackPanel>
+        </Grid>
+
+        <!--  Weekday headers  -->
+        <ItemsControl Grid.Row="1" Margin="0,0,0,6" ItemsSource="{Binding WeekdayHeaders}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Columns="7" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock
+                        Margin="6,0,0,0"
+                        FontSize="11"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                        Text="{Binding}" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!--  Month grid  -->
+        <Border
+            Grid.Row="2"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="10">
+            <ItemsControl ItemsSource="{Binding Days}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="7" Rows="6" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:CalendarDay}">
+                        <Border
+                            x:Name="Cell"
+                            Margin="1"
+                            Padding="6,4"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="0.5"
+                            CornerRadius="6">
+                            <DockPanel>
+                                <!--  Day number  -->
+                                <Border
+                                    x:Name="DayBadge"
+                                    Width="24"
+                                    Height="22"
+                                    Margin="0,0,0,3"
+                                    HorizontalAlignment="Left"
+                                    DockPanel.Dock="Top"
+                                    CornerRadius="11">
+                                    <TextBlock
+                                        x:Name="DayText"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="12.5"
+                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                        Text="{Binding DayNumber}" />
+                                </Border>
+
+                                <!--  Overflow note  -->
+                                <TextBlock
+                                    DockPanel.Dock="Bottom"
+                                    FontSize="10.5"
+                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                    Text="{Binding OverflowCount, StringFormat='+{0} more'}"
+                                    Visibility="{Binding HasOverflow, Converter={StaticResource BoolToVisibility}}" />
+
+                                <!--  Chips  -->
+                                <ItemsControl ItemsSource="{Binding Visible}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:CalendarItem}">
+                                            <Border
+                                                Margin="0,0,0,3"
+                                                Padding="5,2"
+                                                Background="{Binding ColorHex, Converter={StaticResource HexToBrush}, ConverterParameter=Fill}"
+                                                CornerRadius="4"
+                                                ToolTip="{Binding Tooltip}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border
+                                                        Width="6"
+                                                        Height="6"
+                                                        Margin="0,0,5,0"
+                                                        VerticalAlignment="Center"
+                                                        Background="{Binding Status, Converter={StaticResource SubtaskStatusToBrush}}"
+                                                        CornerRadius="3" />
+                                                    <TextBlock
+                                                        x:Name="ChipText"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="11"
+                                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                        Text="{Binding Title}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                                    <Setter TargetName="ChipText" Property="TextDecorations" Value="Strikethrough" />
+                                                    <Setter TargetName="ChipText" Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </DockPanel>
+                        </Border>
+
+                        <DataTemplate.Triggers>
+                            <!--  Dim days outside the current month  -->
+                            <DataTrigger Binding="{Binding InMonth}" Value="False">
+                                <Setter TargetName="Cell" Property="Opacity" Value="0.4" />
+                            </DataTrigger>
+                            <!--  Highlight today  -->
+                            <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                <Setter TargetName="DayBadge" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                <Setter TargetName="DayText" Property="Foreground" Value="White" />
+                                <Setter TargetName="DayText" Property="FontWeight" Value="SemiBold" />
+                                <Setter TargetName="Cell" Property="Background" Value="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+
+        <!--  Empty state  -->
+        <StackPanel
+            Grid.Row="2"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
+            <ui:SymbolIcon
+                HorizontalAlignment="Center"
+                FontSize="40"
+                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                Symbol="CalendarLtr24" />
+            <TextBlock
+                Margin="0,12,0,0"
+                HorizontalAlignment="Center"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="No dated tasks yet. Add a due date to a task to see it here." />
+        </StackPanel>
+    </Grid>
+</Page>
