@@ -108,6 +108,8 @@ public partial class App : Application
         services.AddTransient<InsightsViewModel>();
         services.AddTransient<GanttPage>();
         services.AddTransient<GanttPageViewModel>();
+        services.AddTransient<CalendarPage>();
+        services.AddTransient<CalendarViewModel>();
         services.AddTransient<SettingsPage>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<QuickCaptureWindow>();
