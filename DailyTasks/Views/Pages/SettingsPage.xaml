@@ -5,7 +5,12 @@
     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
     Title="Settings">
 
-    <StackPanel Margin="28,16,28,0">
+    <ScrollViewer
+        Margin="0,0,-12,0"
+        Padding="0,0,12,0"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,16,28,24">
         <TextBlock Style="{StaticResource PageHeading}" Text="Settings" />
         <TextBlock
             Margin="0,3,0,18"
@@ -36,32 +41,6 @@
                 Width="220"
                 PlaceholderText="Mark"
                 Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}" />
-        </ui:CardControl>
-
-        <ui:CardControl Margin="0,0,0,10">
-            <ui:CardControl.Header>
-                <StackPanel Orientation="Horizontal">
-                    <ui:SymbolIcon
-                        VerticalAlignment="Center"
-                        FontSize="20"
-                        Symbol="People24" />
-                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
-                        <TextBlock
-                            FontWeight="SemiBold"
-                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                            Text="Team" />
-                        <TextBlock
-                            FontSize="12"
-                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                            Text="Add the people you assign project subtasks to." />
-                    </StackPanel>
-                </StackPanel>
-            </ui:CardControl.Header>
-
-            <ui:Button
-                Command="{Binding ManageTeamCommand}"
-                Content="Manage team…"
-                Icon="{ui:SymbolIcon PeopleTeam24}" />
         </ui:CardControl>
 
         <ui:CardControl Margin="0,0,0,10">
@@ -112,7 +91,7 @@
                 Maximum="180"
                 Minimum="1"
                 SpinButtonPlacementMode="Inline"
-                Value="{Binding PomodoroMinutes}" />
+                Value="{Binding PomodoroMinutes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
         </ui:CardControl>
 
         <ui:CardControl Margin="0,0,0,10">
@@ -168,7 +147,7 @@
                 Minimum="0"
                 SmallChange="0.5"
                 SpinButtonPlacementMode="Inline"
-                Value="{Binding FreeHoursPerDay}" />
+                Value="{Binding FreeHoursPerDay, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
         </ui:CardControl>
 
         <ui:CardControl Margin="0,0,0,10">
@@ -224,6 +203,65 @@
                 Text="{Binding GitRepoPath, UpdateSourceTrigger=PropertyChanged}" />
         </ui:CardControl>
 
+        <!--  How-to / demo for the git auto-complete feature  -->
+        <Border
+            Margin="0,0,0,10"
+            Padding="18"
+            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Visibility="{Binding DeveloperFeaturesEnabled, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="18"
+                        Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                        Symbol="BookQuestionMark24" />
+                    <TextBlock
+                        Margin="10,0,0,0"
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                        Text="How git auto-complete works" />
+                </StackPanel>
+
+                <TextBlock
+                    Margin="0,10,0,0"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    TextWrapping="Wrap">
+                    <Run Text="1." FontWeight="SemiBold" /> <Run Text="Set the repository path above to a folder that contains a" /> <Run FontFamily="Cascadia Mono, Consolas" Text=".git" /> <Run Text="folder." /><LineBreak />
+                    <Run Text="2." FontWeight="SemiBold" /> <Run Text="Edit a task and put a marker in its" /> <Run FontWeight="SemiBold" Text="Git link" /> <Run Text="field — e.g." /> <Run FontFamily="Cascadia Mono, Consolas" Text="TASK-42" /> <Run Text="or" /> <Run FontFamily="Cascadia Mono, Consolas" Text="closes #42" /> <Run Text="." /><LineBreak />
+                    <Run Text="3." FontWeight="SemiBold" /> <Run Text="Commit in that repo with the marker in the message, e.g." /> <Run FontFamily="Cascadia Mono, Consolas" Text="git commit -m &quot;fix login TASK-42&quot;" /> <Run Text="." /><LineBreak />
+                    <Run Text="4." FontWeight="SemiBold" /> <Run Text="Within 30 seconds the task is checked off automatically — or press Check now below." />
+                </TextBlock>
+
+                <TextBlock
+                    Margin="0,10,0,0"
+                    FontSize="11.5"
+                    FontStyle="Italic"
+                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                    TextWrapping="Wrap"
+                    Text="Only commits made after the task was created count, so an old commit won't close a brand-new task." />
+
+                <StackPanel Margin="0,14,0,0" Orientation="Horizontal">
+                    <ui:Button
+                        Padding="14,8"
+                        Appearance="Primary"
+                        Command="{Binding CheckCommitsNowCommand}"
+                        Content="Check now"
+                        Icon="{ui:SymbolIcon ArrowSync24}" />
+                    <TextBlock
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Center"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="{Binding GitCheckResult}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
         <ui:CardControl Margin="0,0,0,10">
             <ui:CardControl.Header>
                 <StackPanel Orientation="Horizontal">
@@ -266,5 +304,6 @@
                 </StackPanel>
             </ui:CardControl.Header>
         </ui:CardControl>
-    </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
 </Page>
