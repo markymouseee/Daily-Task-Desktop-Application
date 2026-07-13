@@ -106,6 +106,8 @@ public partial class App : Application
         services.AddTransient<CompletedViewModel>();
         services.AddTransient<InsightsPage>();
         services.AddTransient<InsightsViewModel>();
+        services.AddTransient<ProjectsPage>();
+        services.AddTransient<ProjectsViewModel>();
         services.AddTransient<GanttPage>();
         services.AddTransient<GanttPageViewModel>();
         services.AddTransient<CalendarPage>();
