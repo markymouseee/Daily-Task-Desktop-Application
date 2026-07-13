@@ -110,9 +110,14 @@ namespace DailyTasks.Data.Migrations
                     b.Property<int>("OwnerTaskId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("PairedPhaseId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerTaskId");
+
+                    b.HasIndex("PairedPhaseId");
 
                     b.ToTable("Phases");
                 });
@@ -149,10 +154,6 @@ namespace DailyTasks.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("CustomPhases")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("TEXT");
 
@@ -173,7 +174,7 @@ namespace DailyTasks.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Methodology")
-                        .HasMaxLength(16)
+                        .HasMaxLength(24)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Notes")
@@ -201,6 +202,9 @@ namespace DailyTasks.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValue("None");
 
+                    b.Property<int?>("SprintLengthDays")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("TEXT");
 
@@ -219,6 +223,14 @@ namespace DailyTasks.Data.Migrations
                     b.Property<string>("WhyReason")
                         .HasMaxLength(300)
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("WipLimit")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("XpPractices")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
 
                     b.HasKey("Id");
 
@@ -256,6 +268,11 @@ namespace DailyTasks.Data.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ScrumRole")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.ToTable("TeamMembers");
@@ -279,7 +296,14 @@ namespace DailyTasks.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("DailyTasks.Models.Phase", "PairedPhase")
+                        .WithMany()
+                        .HasForeignKey("PairedPhaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("OwnerTask");
+
+                    b.Navigation("PairedPhase");
                 });
 
             modelBuilder.Entity("DailyTasks.Models.TaskItem", b =>
