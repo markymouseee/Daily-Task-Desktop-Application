@@ -8,5 +8,6 @@ public partial class AllTasksViewModel(ITaskService tasks, FocusService focus, I
 {
     public override string EmptyMessage => "No tasks yet. Head to Today to add your first one.";
 
-    protected override bool Includes(TaskItem task) => !task.IsCompleted;
+    // Organized project heads live on the Projects page, not among plain tasks.
+    protected override bool Includes(TaskItem task) => !task.IsCompleted && task.Methodology is null;
 }
