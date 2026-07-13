@@ -1,0 +1,89 @@
+<UserControl
+    x:Class="DailyTasks.Views.PipelineChart"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:vm="clr-namespace:DailyTasks.ViewModels">
+
+    <Border Padding="20,18" Style="{StaticResource Card}">
+        <StackPanel>
+            <TextBlock Style="{StaticResource SectionLabel}" Text="CONTINUOUS DELIVERY PIPELINE" />
+
+            <ItemsControl Margin="0,10,0,0" ItemsSource="{Binding Stages}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:PipelineStageViewModel}">
+                        <StackPanel Margin="0,0,0,10" Orientation="Horizontal">
+                            <Border
+                                x:Name="StageBox"
+                                Width="128"
+                                Padding="12,10"
+                                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="9">
+                                <StackPanel>
+                                    <TextBlock
+                                        x:Name="StageName"
+                                        FontSize="13.5"
+                                        FontWeight="SemiBold"
+                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                        Text="{Binding Name}" />
+                                    <TextBlock
+                                        Margin="0,2,0,0"
+                                        FontSize="11"
+                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                        Text="{Binding CountText, StringFormat='{}{0} done'}" />
+                                </StackPanel>
+                            </Border>
+
+                            <ui:SymbolIcon
+                                Margin="6,0,6,0"
+                                VerticalAlignment="Center"
+                                FontSize="16"
+                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                Symbol="ArrowRight24" />
+                        </StackPanel>
+
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                <Setter TargetName="StageBox" Property="Background" Value="#3322C55E" />
+                                <Setter TargetName="StageBox" Property="BorderBrush" Value="#4022C55E" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                <Setter TargetName="StageBox" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                <Setter TargetName="StageBox" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                <Setter TargetName="StageName" Property="Foreground" Value="White" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border
+                Margin="0,4,0,0"
+                Padding="10,7"
+                HorizontalAlignment="Left"
+                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                CornerRadius="8">
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="15"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Symbol="ArrowRepeatAll24" />
+                    <TextBlock
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                        Text="Monitor feeds back into Plan — the pipeline runs continuously." />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

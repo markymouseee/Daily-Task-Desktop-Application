@@ -208,7 +208,13 @@
                     PreviewMouseWheel="OnBodyWheel"
                     ScrollChanged="OnBodyScrollChanged"
                     VerticalScrollBarVisibility="Auto">
-                    <Grid Width="{Binding TimelineWidth}" Height="{Binding BodyHeight}">
+                    <!--  Top/Left, or an explicit-Height Grid gets centred in a taller viewport,
+                          knocking the bars out of line with the frozen label rows.  -->
+                    <Grid
+                        Width="{Binding TimelineWidth}"
+                        Height="{Binding BodyHeight}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top">
                         <ItemsControl ItemsSource="{Binding Rows}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
