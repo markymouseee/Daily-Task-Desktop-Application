@@ -34,16 +34,6 @@ public partial class TodayPage : Page, INavigationAware
 
     public Task OnNavigatedFromAsync() => Task.CompletedTask;
 
-    private void OnKebab(object sender, RoutedEventArgs e)
-    {
-        if (KebabButton.ContextMenu is { } menu)
-        {
-            menu.PlacementTarget = KebabButton;
-            menu.Placement = PlacementMode.Bottom;
-            menu.IsOpen = true;
-        }
-    }
-
     private void OnScrollDown(object sender, RoutedEventArgs e) =>
         TasksScroll.ScrollToVerticalOffset(TasksScroll.VerticalOffset + (TasksScroll.ViewportHeight * 0.9));
 

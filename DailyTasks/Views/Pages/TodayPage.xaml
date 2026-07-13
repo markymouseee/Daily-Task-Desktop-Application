@@ -51,25 +51,6 @@
                         Content="New Task"
                         FontSize="14"
                         Icon="{ui:SymbolIcon Add24}" />
-                    <ui:Button
-                        x:Name="KebabButton"
-                        Margin="8,0,0,0"
-                        Padding="11,10"
-                        Appearance="Secondary"
-                        Click="OnKebab"
-                        Icon="{ui:SymbolIcon MoreHorizontal24}"
-                        ToolTip="More">
-                        <ui:Button.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem
-                                    Command="{Binding PlacementTarget.DataContext.NewProjectCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                    Header="New project…" />
-                                <MenuItem
-                                    Command="{Binding PlacementTarget.DataContext.ManageTeamCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                    Header="Manage team…" />
-                            </ContextMenu>
-                        </ui:Button.ContextMenu>
-                    </ui:Button>
                 </StackPanel>
             </Grid>
 
