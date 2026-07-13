@@ -73,6 +73,20 @@
             Text="Assigned to" />
         <ComboBox x:Name="AssigneeBox" DisplayMemberPath="Name" HorizontalAlignment="Stretch" />
 
+        <!--  XP practice tags, only under an XP head  -->
+        <StackPanel x:Name="XpRow" Visibility="Collapsed">
+            <TextBlock
+                Margin="0,14,0,6"
+                FontSize="12"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="XP practices" />
+            <StackPanel Orientation="Horizontal">
+                <CheckBox x:Name="PairBox" Margin="0,0,16,0" Content="Pair Programming" />
+                <CheckBox x:Name="TddBox" Margin="0,0,16,0" Content="Test-Driven" />
+                <CheckBox x:Name="ReviewBox" Content="Code Review" />
+            </StackPanel>
+        </StackPanel>
+
         <!--  Blocked reason, only when Blocked  -->
         <StackPanel x:Name="BlockedRow" Visibility="Collapsed">
             <TextBlock

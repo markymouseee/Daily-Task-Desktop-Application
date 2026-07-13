@@ -14,7 +14,7 @@ public partial class SubtaskEditWindow : FluentWindow
 
     private readonly TaskItem _subtask;
 
-    public SubtaskEditWindow(TaskItem subtask, bool developerFeatures, IReadOnlyList<TeamMember> team)
+    public SubtaskEditWindow(TaskItem subtask, bool developerFeatures, IReadOnlyList<TeamMember> team, bool showXpPractices = false)
     {
         _subtask = subtask;
         InitializeComponent();
@@ -40,6 +40,12 @@ public partial class SubtaskEditWindow : FluentWindow
         GitBox.Text = subtask.GitLink ?? string.Empty;
 
         GitRow.Visibility = developerFeatures ? Visibility.Visible : Visibility.Collapsed;
+
+        XpRow.Visibility = showXpPractices ? Visibility.Visible : Visibility.Collapsed;
+        PairBox.IsChecked = subtask.XpPractices.HasFlag(XpPractice.PairProgramming);
+        TddBox.IsChecked = subtask.XpPractices.HasFlag(XpPractice.TestDriven);
+        ReviewBox.IsChecked = subtask.XpPractices.HasFlag(XpPractice.CodeReview);
+
         UpdateBlockedVisibility();
     }
 
@@ -81,6 +87,15 @@ public partial class SubtaskEditWindow : FluentWindow
         _subtask.ContextResumeNote = Blank(ResumeBox.Text);
 
         _subtask.BlockedReason = _subtask.Status == WorkStatus.Blocked ? Blank(BlockedBox.Text) : null;
+
+        if (XpRow.Visibility == Visibility.Visible)
+        {
+            var practices = XpPractice.None;
+            if (PairBox.IsChecked == true) practices |= XpPractice.PairProgramming;
+            if (TddBox.IsChecked == true) practices |= XpPractice.TestDriven;
+            if (ReviewBox.IsChecked == true) practices |= XpPractice.CodeReview;
+            _subtask.XpPractices = practices;
+        }
 
         if (GitRow.Visibility == Visibility.Visible)
         {

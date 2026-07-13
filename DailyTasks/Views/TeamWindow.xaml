@@ -28,7 +28,7 @@
 
         <ui:TitleBar
             Grid.Row="0"
-            Title="Team"
+            Title="{Binding ProjectTitle, StringFormat='{}{0} — team'}"
             ShowMaximize="False"
             ShowMinimize="False" />
 

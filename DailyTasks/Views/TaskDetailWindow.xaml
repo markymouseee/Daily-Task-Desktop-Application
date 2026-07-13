@@ -124,24 +124,43 @@
                                 Foreground="#EF4444"
                                 Text="{Binding BlockedCount, StringFormat={}{0} blocked}" />
                         </Border>
-                        <ui:Button
+                        <StackPanel
                             Margin="0,12,0,0"
                             HorizontalAlignment="Right"
-                            Appearance="Secondary"
-                            Command="{Binding ExportCommand}"
-                            Content="Export SDLC to Excel"
-                            Icon="{ui:SymbolIcon DocumentTable24}"
-                            IsEnabled="{Binding IsExporting, Converter={StaticResource InverseBool}}" />
+                            Orientation="Horizontal">
+                            <ui:Button
+                                Appearance="Secondary"
+                                Command="{Binding ManageTeamCommand}"
+                                Content="Team"
+                                Icon="{ui:SymbolIcon People24}"
+                                ToolTip="Manage this project's team" />
+                            <ui:Button
+                                Margin="8,0,0,0"
+                                Appearance="Secondary"
+                                Command="{Binding OpenCommitsCommand}"
+                                Content="Commits"
+                                Icon="{ui:SymbolIcon BranchFork24}"
+                                ToolTip="This project's git repository and recent commits"
+                                Visibility="{Binding ShowDeveloperTools, Converter={StaticResource BoolToVisibility}}" />
+                            <ui:Button
+                                Margin="8,0,0,0"
+                                Appearance="Secondary"
+                                Command="{Binding ExportCommand}"
+                                Content="Export"
+                                Icon="{ui:SymbolIcon DocumentTable24}"
+                                IsEnabled="{Binding IsExporting, Converter={StaticResource InverseBool}}"
+                                ToolTip="Export SDLC to Excel" />
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </Border>
 
-            <!--  List / Gantt toggle  -->
+            <!--  List / chart toggle (chart label varies by methodology)  -->
             <StackPanel
                 Grid.Row="2"
                 Margin="0,0,0,14"
                 Orientation="Horizontal"
-                Visibility="{Binding GanttAvailable, Converter={StaticResource BoolToVisibility}}">
+                Visibility="{Binding HasChartToggle, Converter={StaticResource BoolToVisibility}}">
                 <RadioButton
                     MinWidth="88"
                     Content="List"
@@ -150,7 +169,7 @@
                     Style="{StaticResource ViewToggle}" />
                 <RadioButton
                     MinWidth="88"
-                    Content="Gantt"
+                    Content="{Binding ChartToggleLabel}"
                     GroupName="DetailView"
                     IsChecked="{Binding IsGanttView, Mode=TwoWay}"
                     Style="{StaticResource ViewToggle}" />
@@ -258,14 +277,49 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <!--  Gantt  -->
+            <!--  Sequential Gantt (Waterfall)  -->
             <views:GanttChart
                 Grid.Row="3"
                 DataContext="{Binding Gantt}"
-                Visibility="{Binding DataContext.IsGanttView, RelativeSource={RelativeSource AncestorType={x:Type ui:FluentWindow}}, Converter={StaticResource BoolToVisibility}}" />
+                Visibility="{Binding DataContext.ShowSequentialGantt, RelativeSource={RelativeSource AncestorType={x:Type ui:FluentWindow}}, Converter={StaticResource BoolToVisibility}}" />
 
-            <!--  Kanban  -->
-            <Grid Grid.Row="3" Visibility="{Binding IsKanban, Converter={StaticResource BoolToVisibility}}">
+            <!--  V-Shaped Gantt (V-Model)  -->
+            <views:VShapedGanttChart
+                Grid.Row="3"
+                DataContext="{Binding VGantt}"
+                Visibility="{Binding DataContext.ShowVGantt, RelativeSource={RelativeSource AncestorType={x:Type ui:FluentWindow}}, Converter={StaticResource BoolToVisibility}}" />
+
+            <!--  Cyclical Gantt (Spiral / Iterative &amp; Incremental / RAD)  -->
+            <views:CyclicalGanttChart
+                Grid.Row="3"
+                DataContext="{Binding CycleGantt}"
+                Visibility="{Binding DataContext.ShowCyclicalGantt, RelativeSource={RelativeSource AncestorType={x:Type ui:FluentWindow}}, Converter={StaticResource BoolToVisibility}}" />
+
+            <!--  Agile Gantt (Agile / Scrum / XP) — grouped by sprint  -->
+            <views:AgileGanttChart
+                Grid.Row="3"
+                DataContext="{Binding AgileGantt}"
+                Visibility="{Binding DataContext.ShowAgileGantt, RelativeSource={RelativeSource AncestorType={x:Type ui:FluentWindow}}, Converter={StaticResource BoolToVisibility}}" />
+
+            <!--  DevOps pipeline  -->
+            <views:PipelineChart
+                Grid.Row="3"
+                VerticalAlignment="Top"
+                DataContext="{Binding Pipeline}"
+                Visibility="{Binding DataContext.ShowPipeline, RelativeSource={RelativeSource AncestorType={x:Type ui:FluentWindow}}, Converter={StaticResource BoolToVisibility}}" />
+
+            <!--  Big Bang flat list  -->
+            <ScrollViewer
+                Grid.Row="3"
+                Margin="0,0,-12,0"
+                Padding="0,0,12,0"
+                VerticalScrollBarVisibility="Auto"
+                Visibility="{Binding UsesFlatList, Converter={StaticResource BoolToVisibility}}">
+                <ItemsControl ItemsSource="{Binding FlatItems}" />
+            </ScrollViewer>
+
+            <!--  Kanban / Lean board  -->
+            <Grid Grid.Row="3" Visibility="{Binding UsesBoard, Converter={StaticResource BoolToVisibility}}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
@@ -301,9 +355,63 @@
                     </DockPanel>
                 </Border>
 
-                <Border Grid.Column="1" Margin="6,0,6,0" Padding="10" Style="{StaticResource Card}">
+                <Border
+                    x:Name="InProgressColumnCard"
+                    Grid.Column="1"
+                    Margin="6,0,6,0"
+                    Padding="10">
+                    <Border.Style>
+                        <Style BasedOn="{StaticResource Card}" TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding WipExceeded}" Value="True">
+                                    <Setter Property="BorderBrush" Value="#EF4444" />
+                                    <Setter Property="BorderThickness" Value="1.5" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="In Progress" />
+                        <Grid DockPanel.Dock="Top">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="In Progress" />
+                            <Border
+                                x:Name="WipBadge"
+                                Grid.Column="1"
+                                Padding="7,1"
+                                CornerRadius="9"
+                                ToolTip="Work-in-progress limit"
+                                Visibility="{Binding HasWipLimit, Converter={StaticResource BoolToVisibility}}">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding WipExceeded}" Value="True">
+                                                <Setter Property="Background" Value="#33EF4444" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock
+                                    x:Name="WipBadgeText"
+                                    FontSize="11"
+                                    FontWeight="SemiBold"
+                                    Text="{Binding WipBadge}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding WipExceeded}" Value="True">
+                                                    <Setter Property="Foreground" Value="#EF4444" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </Grid>
                         <ScrollViewer Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
                             <ItemsControl
                                 AllowDrop="True"
