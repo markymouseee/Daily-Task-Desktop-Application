@@ -1,8 +1,6 @@
 using System.IO;
-using System.Text.Json;
 using DailyTasks.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace DailyTasks.Data;
 
@@ -61,28 +59,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasMaxLength(16)
             .HasDefaultValue(WorkStatus.Todo);
 
-        // Nullable: null = a plain, unstructured task.
-        task.Property(t => t.Methodology).HasConversion<string>().HasMaxLength(16);
+        // Nullable: null = a plain, unstructured task. Widened past 16 to fit the longer
+        // member names (e.g. "IterativeIncremental").
+        task.Property(t => t.Methodology).HasConversion<string>().HasMaxLength(24);
 
         task.Property(t => t.Recurrence)
             .HasConversion<string>()
             .HasMaxLength(16)
             .HasDefaultValue(RecurrenceKind.None);
 
-        // Custom phase names ride along as a small JSON array; comparing the list
-        // by value keeps EF's change tracking honest for a mutable reference type.
-        var stringListComparer = new ValueComparer<List<string>>(
-            (a, b) => (a ?? new()).SequenceEqual(b ?? new()),
-            v => v.Aggregate(0, (hash, s) => HashCode.Combine(hash, s.GetHashCode())),
-            v => v.ToList());
-
-        task.Property(t => t.CustomPhases)
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                v => string.IsNullOrEmpty(v)
-                    ? new List<string>()
-                    : JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
-            .Metadata.SetValueComparer(stringListComparer);
+        // XP practice tags stored as their flags integer (0 = none).
+        task.Property(t => t.XpPractices).HasDefaultValue(XpPractice.None);
 
         task.HasOne(t => t.Category)
             .WithMany(c => c.Tasks)
@@ -121,6 +108,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(p => p.OwnerTaskId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // V-Model pairing: a dev phase points at its test phase. Self-referencing, and
+        // deleting one side simply clears the link rather than cascading.
+        phase.HasOne(p => p.PairedPhase)
+            .WithMany()
+            .HasForeignKey(p => p.PairedPhaseId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         phase.HasIndex(p => p.OwnerTaskId);
 
         var member = modelBuilder.Entity<TeamMember>();
@@ -128,6 +122,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         member.Property(m => m.Name).IsRequired().HasMaxLength(100);
         member.Property(m => m.Role).HasMaxLength(60);
         member.Property(m => m.InitialsColorHex).IsRequired().HasMaxLength(9);
+        member.Property(m => m.ScrumRole).HasConversion<string>().HasMaxLength(16);
 
         var interruption = modelBuilder.Entity<InterruptionEvent>();
 
