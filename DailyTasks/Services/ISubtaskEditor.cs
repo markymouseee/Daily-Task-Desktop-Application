@@ -8,5 +8,10 @@ namespace DailyTasks.Services;
 /// </summary>
 public interface ISubtaskEditor
 {
-    Task<bool> EditAsync(TaskItem subtask, bool developerFeatures);
+    /// <summary>
+    /// Edits a subtask. The assignee picker is scoped to <paramref name="projectId"/>'s team.
+    /// <paramref name="showXpPractices"/> reveals the XP practice tag checkboxes (only
+    /// meaningful under an XP-organized head).
+    /// </summary>
+    Task<bool> EditAsync(TaskItem subtask, int projectId, bool developerFeatures, bool showXpPractices = false);
 }
