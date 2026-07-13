@@ -1,0 +1,345 @@
+<UserControl
+    x:Class="DailyTasks.Views.AgileGanttChart"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+    xmlns:views="clr-namespace:DailyTasks.Views"
+    xmlns:vm="clr-namespace:DailyTasks.ViewModels">
+
+    <UserControl.Resources>
+        <!--  Header cell for the frozen data table.  -->
+        <Style x:Key="ColHead" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="10.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  Zoom controls  -->
+        <StackPanel
+            Grid.Row="0"
+            Margin="0,0,0,10"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal">
+            <TextBlock
+                Margin="0,0,10,0"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                Text="{Binding ZoomLabel, StringFormat='Zoom · {0}'}" />
+            <ui:Button Padding="9,4" Command="{Binding ZoomOutCommand}" Content="−" FontSize="15" ToolTip="Zoom out" />
+            <ui:Button Margin="6,0,0,0" Padding="9,4" Command="{Binding ZoomInCommand}" Content="+" FontSize="15" ToolTip="Zoom in" />
+        </StackPanel>
+
+        <Border
+            Grid.Row="1"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            ClipToBounds="True"
+            CornerRadius="10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="600" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!--  Frozen table header  -->
+                <Border
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="0,0,1,1">
+                    <Grid Margin="12,0,8,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="176" />
+                            <ColumnDefinition Width="92" />
+                            <ColumnDefinition Width="58" />
+                            <ColumnDefinition Width="58" />
+                            <ColumnDefinition Width="42" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="72" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Style="{StaticResource ColHead}" Text="ACTIVITY" />
+                        <TextBlock Grid.Column="1" Style="{StaticResource ColHead}" Text="ASSIGNED" />
+                        <TextBlock Grid.Column="2" Style="{StaticResource ColHead}" Text="START" />
+                        <TextBlock Grid.Column="3" Style="{StaticResource ColHead}" Text="END" />
+                        <TextBlock Grid.Column="4" Style="{StaticResource ColHead}" Text="DUR" />
+                        <TextBlock Grid.Column="5" Style="{StaticResource ColHead}" Text="STATUS" />
+                        <TextBlock Grid.Column="6" Style="{StaticResource ColHead}" Text="% DONE" />
+                    </Grid>
+                </Border>
+
+                <!--  Timeline week header  -->
+                <Border
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="0,0,0,1">
+                    <ScrollViewer x:Name="HeaderScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden">
+                        <Grid Width="{Binding TimelineWidth}" Height="30">
+                            <ItemsControl ItemsSource="{Binding Columns}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                        <Setter Property="Canvas.Top" Value="8" />
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:GanttColumn}">
+                                        <TextBlock FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding Label}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Canvas Visibility="{Binding HasToday, Converter={StaticResource BoolToVisibility}}">
+                                <Border Canvas.Left="{Binding TodayX}" Canvas.Top="4" Padding="5,1" Background="{DynamicResource AccentFillColorDefaultBrush}" CornerRadius="6">
+                                    <Border.RenderTransform>
+                                        <TranslateTransform X="-14" />
+                                    </Border.RenderTransform>
+                                    <TextBlock FontSize="10" FontWeight="SemiBold" Foreground="White" Text="Today" />
+                                </Border>
+                            </Canvas>
+                        </Grid>
+                    </ScrollViewer>
+                </Border>
+
+                <!--  Frozen data table body  -->
+                <Border
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="0,0,1,0">
+                    <ScrollViewer x:Name="LabelScroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Hidden">
+                        <ItemsControl ItemsSource="{Binding Rows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:AgileGanttRow}">
+                                    <Border x:Name="RowBg" Height="{x:Static vm:AgileGanttViewModel.RowPitch}">
+                                        <Grid>
+                                            <!--  Activity columns  -->
+                                            <Grid x:Name="Cols" Margin="12,0,8,0" Visibility="{Binding IsSprint, Converter={StaticResource InverseBoolToVisibility}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="176" />
+                                                    <ColumnDefinition Width="92" />
+                                                    <ColumnDefinition Width="58" />
+                                                    <ColumnDefinition Width="58" />
+                                                    <ColumnDefinition Width="42" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="72" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Activity}" TextTrimming="CharacterEllipsis" />
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Visibility="{Binding HasAssignee, Converter={StaticResource BoolToVisibility}}">
+                                                    <views:Avatar VerticalAlignment="Center" ColorHex="{Binding AssigneeColor}" DisplayName="{Binding AssigneeName}" Size="18" />
+                                                    <TextBlock Margin="5,0,0,0" VerticalAlignment="Center" FontSize="11.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding AssigneeFirstName}" TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+
+                                                <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="11.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StartText}" />
+                                                <TextBlock Grid.Column="3" VerticalAlignment="Center" FontSize="11.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding EndText}" />
+                                                <TextBlock Grid.Column="4" VerticalAlignment="Center" FontSize="11.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding DurationText}" />
+
+                                                <Border Grid.Column="5" Height="20" Margin="0,0,6,0" HorizontalAlignment="Left" Padding="7,0" VerticalAlignment="Center" Background="{Binding Status, Converter={StaticResource SubtaskStatusToBrush}, ConverterParameter=Fill}" CornerRadius="9">
+                                                    <TextBlock VerticalAlignment="Center" FontSize="10.5" FontWeight="SemiBold" Foreground="{Binding Status, Converter={StaticResource SubtaskStatusToBrush}}" Text="{Binding StatusText}" />
+                                                </Border>
+
+                                                <!--  % done: editable dropdown for a leaf activity, read-only rollup for a parent.  -->
+                                                <ComboBox
+                                                    Grid.Column="6"
+                                                    Height="24"
+                                                    Padding="6,0"
+                                                    VerticalAlignment="Center"
+                                                    VerticalContentAlignment="Center"
+                                                    DisplayMemberPath="Label"
+                                                    DropDownClosed="OnPercentDropDownClosed"
+                                                    FontSize="11"
+                                                    ItemsSource="{Binding DataContext.StatusOptions, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    SelectedValue="{Binding Status, Mode=OneWay}"
+                                                    SelectedValuePath="Status"
+                                                    ToolTip="Set % done"
+                                                    Visibility="{Binding IsLeaf, Converter={StaticResource BoolToVisibility}}" />
+                                                <TextBlock
+                                                    Grid.Column="6"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="11.5"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                                    Text="{Binding PercentText}"
+                                                    Visibility="{Binding IsLeaf, Converter={StaticResource InverseBoolToVisibility}}" />
+                                            </Grid>
+
+                                            <!--  Sprint band  -->
+                                            <Grid x:Name="SprintBand" Margin="12,0,8,0" Visibility="{Binding IsSprint, Converter={StaticResource BoolToVisibility}}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <ui:SymbolIcon VerticalAlignment="Center" FontSize="13" Foreground="{DynamicResource AccentFillColorDefaultBrush}" Symbol="Flag24" />
+                                                    <TextBlock Margin="6,0,0,0" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Sprint}" />
+                                                    <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding DateRangeText}" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="11.5" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StatusText}" />
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsSprint}" Value="True">
+                                            <Setter TargetName="RowBg" Property="Background" Value="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+
+                <!--  Timeline body  -->
+                <ScrollViewer
+                    x:Name="BodyScroll"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    HorizontalScrollBarVisibility="Auto"
+                    PreviewMouseWheel="OnBodyWheel"
+                    ScrollChanged="OnBodyScrollChanged"
+                    VerticalScrollBarVisibility="Auto">
+                    <!--  Top/Left alignment is essential: with an explicit Height and the default
+                          Stretch, WPF centres this Grid in the taller viewport, pushing every bar
+                          down and out of line with its row in the frozen table.  -->
+                    <Grid
+                        Width="{Binding TimelineWidth}"
+                        Height="{Binding BodyHeight}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top">
+                        <!--  Sprint background bands  -->
+                        <ItemsControl ItemsSource="{Binding Rows}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="Canvas.Left" Value="0" />
+                                    <Setter Property="Canvas.Top" Value="{Binding Top}" />
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:AgileGanttRow}">
+                                    <Border
+                                        Width="{Binding DataContext.TimelineWidth, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        Height="{x:Static vm:AgileGanttViewModel.RowPitch}"
+                                        Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                                        Opacity="0.6"
+                                        Visibility="{Binding IsSprint, Converter={StaticResource BoolToVisibility}}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!--  Gridlines  -->
+                        <ItemsControl ItemsSource="{Binding Columns}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                    <Setter Property="Canvas.Top" Value="0" />
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:GanttColumn}">
+                                    <Border Width="1" Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Background="{DynamicResource CardStrokeColorDefaultBrush}" Opacity="0.5" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!--  Activity bars with % fill  -->
+                        <ItemsControl ItemsSource="{Binding Rows}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <Canvas />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemContainerStyle>
+                                <Style TargetType="ContentPresenter">
+                                    <Setter Property="Canvas.Left" Value="{Binding BarLeft}" />
+                                    <Setter Property="Canvas.Top" Value="{Binding BarTop}" />
+                                </Style>
+                            </ItemsControl.ItemContainerStyle>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type vm:AgileGanttRow}">
+                                    <Button
+                                        Command="{Binding DataContext.ActivateRowCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource CardButton}"
+                                        ToolTip="{Binding Activity}"
+                                        Visibility="{Binding HasBar, Converter={StaticResource BoolToVisibility}}">
+                                        <Grid Width="{Binding BarWidth}" Height="{x:Static vm:AgileGanttViewModel.BarHeight}">
+                                            <!--  Track (faded status colour)  -->
+                                            <Border Background="{Binding Status, Converter={StaticResource SubtaskStatusToBrush}}" CornerRadius="5" Opacity="0.28" />
+                                            <!--  Completed fill  -->
+                                            <Border Width="{Binding FillWidth}" HorizontalAlignment="Left" Background="{Binding Status, Converter={StaticResource SubtaskStatusToBrush}}" CornerRadius="5" />
+                                            <TextBlock Margin="6,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="10" FontWeight="SemiBold" Foreground="White" Text="{Binding PercentText}" />
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!--  Today line  -->
+                        <Canvas Visibility="{Binding HasToday, Converter={StaticResource BoolToVisibility}}">
+                            <Border Canvas.Left="{Binding TodayX}" Width="2" Height="{Binding BodyHeight}" Background="{DynamicResource AccentFillColorDefaultBrush}" />
+                        </Canvas>
+
+                        <TextBlock
+                            Margin="24"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="No dated activities yet — add start/due dates to see the timeline."
+                            Visibility="{Binding HasBars, Converter={StaticResource InverseBoolToVisibility}}" />
+                    </Grid>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!--  Legend  -->
+        <StackPanel Grid.Row="2" Margin="2,12,0,0" Orientation="Horizontal">
+            <StackPanel Margin="0,0,18,0" Orientation="Horizontal">
+                <Border Width="12" Height="12" VerticalAlignment="Center" Background="#22C55E" CornerRadius="3" />
+                <TextBlock Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Done" />
+            </StackPanel>
+            <StackPanel Margin="0,0,18,0" Orientation="Horizontal">
+                <Border Width="12" Height="12" VerticalAlignment="Center" Background="#3B82F6" CornerRadius="3" />
+                <TextBlock Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="In Progress" />
+            </StackPanel>
+            <StackPanel Margin="0,0,18,0" Orientation="Horizontal">
+                <Border Width="12" Height="12" VerticalAlignment="Center" Background="#EF4444" CornerRadius="3" />
+                <TextBlock Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="Blocked" />
+            </StackPanel>
+            <TextBlock VerticalAlignment="Center" FontSize="12" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Text="Bar fill shows % complete." />
+        </StackPanel>
+    </Grid>
+</UserControl>
