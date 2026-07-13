@@ -30,15 +30,81 @@ public enum RecurrenceKind
 
 /// <summary>
 /// The SDLC shape of a methodology-organized task. Drives the default phase set,
-/// the detail view, and the phase-gating rules.
+/// the detail view, the <see cref="ChartType"/> and the phase-gating rules. Stored as
+/// text (see <c>AppDbContext</c>), so members can be reordered freely; renaming or
+/// removing a member instead invalidates rows that stored the old name.
 /// </summary>
 public enum Methodology
 {
-    Waterfall = 0,
-    Agile = 1,
-    Iterative = 2,
-    Kanban = 3,
-    Custom = 4,
+    // Sequential
+    Waterfall,
+    VModel,
+
+    // Iterative / cyclical
+    Spiral,
+    IterativeIncremental,
+    RAD,
+
+    // Agile-based
+    Agile,
+    Scrum,
+    XP,
+
+    // Continuous flow
+    Kanban,
+    Lean,
+    DevOps,
+
+    // Minimal
+    BigBang,
+}
+
+/// <summary>
+/// How a methodology-organized task is visualized. Derived automatically from
+/// <see cref="Methodology"/> (never chosen independently) so the picture is always
+/// structurally correct for the process. See <c>TaskRules.ChartTypeFor</c>.
+/// </summary>
+public enum ChartType
+{
+    /// <summary>Phase bars in a fixed order with dependency connectors (Waterfall).</summary>
+    SequentialGantt,
+
+    /// <summary>Two linked rows — dev phases up top, paired test phases below (V-Model).</summary>
+    VShapedGantt,
+
+    /// <summary>Repeating, bordered cycle blocks (Spiral, Iterative &amp; Incremental, RAD).</summary>
+    CyclicalGantt,
+
+    /// <summary>Sprint-grouped row Gantt with a calendar timeline (Agile, Scrum, XP).</summary>
+    AgileGantt,
+
+    /// <summary>A board or pipeline, no dated timeline (Kanban, Lean, DevOps).</summary>
+    BoardOnly,
+
+    /// <summary>A flat, unordered task list — no phases at all (Big Bang).</summary>
+    FlatListOnly,
+}
+
+/// <summary>Optional Scrum role tag carried by a <see cref="TeamMember"/>.</summary>
+public enum ScrumRole
+{
+    None = 0,
+    ScrumMaster = 1,
+    ProductOwner = 2,
+    DevTeam = 3,
+}
+
+/// <summary>
+/// XP engineering practices a subtask can be tagged with, shown as small icon badges on
+/// its card. Flags so a task can carry several at once.
+/// </summary>
+[Flags]
+public enum XpPractice
+{
+    None = 0,
+    PairProgramming = 1,
+    TestDriven = 2,
+    CodeReview = 4,
 }
 
 /// <summary>

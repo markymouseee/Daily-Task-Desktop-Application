@@ -62,11 +62,30 @@ public class TaskItem
     /// <summary>Null = a plain (unstructured) task; set = organized as an SDLC methodology.</summary>
     public Methodology? Methodology { get; set; }
 
-    /// <summary>Custom phase names, used only when <see cref="Methodology"/> is Custom.</summary>
-    public List<string> CustomPhases { get; set; } = [];
-
-    /// <summary>Planned iteration count, used only for Iterative.</summary>
+    /// <summary>
+    /// Planned cycle/sprint count. Drives the number of iterations for the cyclical
+    /// methodologies (Spiral, Iterative &amp; Incremental, RAD) and the number of sprint
+    /// swimlanes for the agile methodologies (Agile, Scrum, XP).
+    /// </summary>
     public int? IterationCount { get; set; }
+
+    /// <summary>
+    /// Sprint length in days for the agile methodologies (default 14). Sets each sprint
+    /// swimlane's date-range header. Null for non-agile heads.
+    /// </summary>
+    public int? SprintLengthDays { get; set; }
+
+    /// <summary>
+    /// Work-in-progress limit for the In Progress column, used only by Lean. The column
+    /// shows an "n/limit" badge and warns when the count exceeds it. Null = no limit.
+    /// </summary>
+    public int? WipLimit { get; set; }
+
+    /// <summary>
+    /// XP practice tags for a subtask under an XP head (Pair Programming, Test-Driven,
+    /// Code Review), rendered as icon badges. <see cref="XpPractice.None"/> otherwise.
+    /// </summary>
+    public XpPractice XpPractices { get; set; } = XpPractice.None;
 
     /// <summary>The phases owned by this task when it's methodology-organized.</summary>
     public ICollection<Phase> Phases { get; } = [];

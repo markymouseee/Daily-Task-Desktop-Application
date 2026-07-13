@@ -25,6 +25,15 @@ public class Phase
     /// </summary>
     public bool IsLocked { get; set; }
 
+    /// <summary>
+    /// For V-Model only: the test phase paired with this development phase (e.g.
+    /// System Design ↔ System Testing). Null for every other methodology and for the
+    /// test phase side of the pair.
+    /// </summary>
+    public int? PairedPhaseId { get; set; }
+
+    public Phase? PairedPhase { get; set; }
+
     /// <summary>Child tasks placed in this phase.</summary>
     public ICollection<TaskItem> Tasks { get; } = [];
 }
