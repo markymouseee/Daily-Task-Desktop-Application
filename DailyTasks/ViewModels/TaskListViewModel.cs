@@ -74,14 +74,6 @@ public abstract partial class TaskListViewModel(ITaskService tasks, FocusService
         }
     }
 
-    /// <summary>New-project flow (name → methodology → detail), then refresh the list.</summary>
-    [RelayCommand]
-    private async Task NewProject()
-    {
-        await coordinator.CreateProjectAsync();
-        await LoadAsync();
-    }
-
     // ---- ITaskCardHost ----
 
     public Task StartFocusAsync(TaskItemViewModel node) => Focus.StartAsync(node.Model);

@@ -27,6 +27,7 @@ public partial class TeamViewModel : ObservableObject
         ["#3B82F6", "#22C55E", "#A855F7", "#EF4444", "#F59E0B", "#14B8A6", "#EC4899", "#64748B"];
 
     private readonly ITeamService _team;
+    private readonly int _projectId;
     private int _editingId;
 
     [ObservableProperty]
@@ -38,12 +39,18 @@ public partial class TeamViewModel : ObservableObject
     [ObservableProperty]
     private string _editColor = Palette[0];
 
+    /// <summary>Bound to the Scrum-role combo; index maps directly to <see cref="ScrumRole"/> (0 = None).</summary>
+    [ObservableProperty]
+    private int _scrumRoleIndex;
+
     [ObservableProperty]
     private bool _isEditing;
 
-    public TeamViewModel(ITeamService team)
+    public TeamViewModel(ITeamService team, int projectId, string projectTitle)
     {
         _team = team;
+        _projectId = projectId;
+        ProjectTitle = projectTitle;
 
         foreach (var hex in Palette)
         {
@@ -52,6 +59,9 @@ public partial class TeamViewModel : ObservableObject
 
         Swatches[0].IsSelected = true;
     }
+
+    /// <summary>The project whose team this is, shown in the window header.</summary>
+    public string ProjectTitle { get; }
 
     public ObservableCollection<TeamMember> Members { get; } = [];
 
@@ -64,7 +74,7 @@ public partial class TeamViewModel : ObservableObject
     public async Task LoadAsync()
     {
         Members.Clear();
-        foreach (var member in await _team.GetAllAsync())
+        foreach (var member in await _team.GetForProjectAsync(_projectId))
         {
             Members.Add(member);
         }
@@ -91,6 +101,8 @@ public partial class TeamViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync()
     {
+        var role = (ScrumRole)Math.Clamp(ScrumRoleIndex, 0, 3);
+
         if (IsEditing)
         {
             await _team.UpdateAsync(new TeamMember
@@ -99,6 +111,8 @@ public partial class TeamViewModel : ObservableObject
                 Name = EditName.Trim(),
                 Role = EditRole.Trim(),
                 InitialsColorHex = EditColor,
+                ScrumRole = role,
+                OwnerProjectId = _projectId,
             });
         }
         else
@@ -108,6 +122,8 @@ public partial class TeamViewModel : ObservableObject
                 Name = EditName.Trim(),
                 Role = EditRole.Trim(),
                 InitialsColorHex = EditColor,
+                ScrumRole = role,
+                OwnerProjectId = _projectId,
             });
         }
 
@@ -123,6 +139,7 @@ public partial class TeamViewModel : ObservableObject
         _editingId = member.Id;
         EditName = member.Name;
         EditRole = member.Role;
+        ScrumRoleIndex = (int)member.ScrumRole;
         SelectColorHex(member.InitialsColorHex);
         IsEditing = true;
     }
@@ -148,6 +165,7 @@ public partial class TeamViewModel : ObservableObject
         _editingId = 0;
         EditName = string.Empty;
         EditRole = string.Empty;
+        ScrumRoleIndex = 0;
         SelectColorHex(Palette[0]);
     }
 

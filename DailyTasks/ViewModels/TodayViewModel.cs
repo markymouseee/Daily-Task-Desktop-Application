@@ -16,7 +16,6 @@ public partial class TodayViewModel : TaskListViewModel
 
     private readonly ICategoryService _categories;
     private readonly SettingsService _settings;
-    private readonly ITeamCoordinator _teamCoordinator;
     private readonly Queue<TaskItem> _staleQueue = new();
 
     private TaskItem? _staleTask;
@@ -71,13 +70,11 @@ public partial class TodayViewModel : TaskListViewModel
         FocusService focus,
         ITaskEditor editor,
         GitWatcherService gitWatcher,
-        ITeamCoordinator teamCoordinator,
         ITaskCoordinator taskCoordinator)
         : base(tasks, focus, editor, taskCoordinator)
     {
         _categories = categories;
         _settings = settings;
-        _teamCoordinator = teamCoordinator;
         _freeHoursToday = settings.FreeHoursPerDay;
 
         tasks.TaskAdded += OnTaskAdded;
@@ -109,9 +106,11 @@ public partial class TodayViewModel : TaskListViewModel
         RemoveItem(card);
     }
 
-    /// <summary>Today: not done, and due on/before today or unscheduled. Only top-level tasks.</summary>
+    /// <summary>Today: a plain (non-project) task, not done, due on/before today or unscheduled.</summary>
     protected override bool Includes(TaskItem task) =>
-        !task.IsCompleted && (task.DueDate is null || task.DueDate.Value.Date <= DateTime.Today);
+        !task.IsCompleted
+        && task.Methodology is null
+        && (task.DueDate is null || task.DueDate.Value.Date <= DateTime.Today);
 
     private static bool IsPinnedToday(TaskItem task) => task.BigThreeDate?.Date == DateTime.Today;
 
@@ -129,9 +128,6 @@ public partial class TodayViewModel : TaskListViewModel
 
         await base.LoadAsync();
     }
-
-    [RelayCommand]
-    private void ManageTeam() => _teamCoordinator.OpenManager();
 
     // ---- pinned tasks live in BigThree, the rest in Items ----
 
