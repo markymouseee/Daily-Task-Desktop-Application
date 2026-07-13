@@ -14,6 +14,21 @@ public class TeamMember
     /// <summary>Free text, e.g. "Frontend Dev", "QA". Not an enum on purpose.</summary>
     public string Role { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Optional Scrum role, surfaced as metadata under Scrum-organized tasks. Defaults to
+    /// <see cref="ScrumRole.None"/> so it stays invisible for non-Scrum teams.
+    /// </summary>
+    public ScrumRole ScrumRole { get; set; } = ScrumRole.None;
+
+    /// <summary>Display label for <see cref="ScrumRole"/> ("" for None). Not mapped (get-only).</summary>
+    public string ScrumRoleText => ScrumRole switch
+    {
+        ScrumRole.ScrumMaster => "Scrum Master",
+        ScrumRole.ProductOwner => "Product Owner",
+        ScrumRole.DevTeam => "Dev Team",
+        _ => string.Empty,
+    };
+
     /// <summary>Avatar badge background, as "#RRGGBB".</summary>
     public string InitialsColorHex { get; set; } = "#3B82F6";
 
