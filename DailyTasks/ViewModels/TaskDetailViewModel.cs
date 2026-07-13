@@ -17,8 +17,10 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
     private readonly ITaskService _tasks;
     private readonly ISubtaskEditor _editor;
     private readonly IProjectExporter _exporter;
+    private readonly ITeamCoordinator _teamCoordinator;
     private readonly FocusService _focus;
     private readonly bool _developerFeatures;
+    private readonly Action? _openCommits;
 
     [ObservableProperty]
     private int _overallPercent;
@@ -45,41 +47,104 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
     private GanttViewModel? _gantt;
 
     [ObservableProperty]
+    private VShapedGanttViewModel? _vGantt;
+
+    [ObservableProperty]
+    private CyclicalGanttViewModel? _cycleGantt;
+
+    [ObservableProperty]
+    private AgileGanttViewModel? _agileGantt;
+
+    [ObservableProperty]
+    private PipelineViewModel? _pipeline;
+
+    [ObservableProperty]
     private int? _highlightedTaskId;
 
-    public TaskDetailViewModel(TaskItem head, ITaskService tasks, ISubtaskEditor editor, IProjectExporter exporter, FocusService focus, bool developerFeatures)
+    public TaskDetailViewModel(TaskItem head, ITaskService tasks, ISubtaskEditor editor, IProjectExporter exporter, ITeamCoordinator teamCoordinator, FocusService focus, bool developerFeatures, Action? openCommits = null)
     {
         Model = head;
         _tasks = tasks;
         _editor = editor;
         _exporter = exporter;
+        _teamCoordinator = teamCoordinator;
         _focus = focus;
         _developerFeatures = developerFeatures;
+        _openCommits = openCommits;
 
         Rebuild();
     }
+
+    /// <summary>Developer-only tools (the per-project commit feed) show only when enabled.</summary>
+    public bool ShowDeveloperTools => _developerFeatures;
+
+    /// <summary>Opens this project's own team (members scoped to it).</summary>
+    [RelayCommand]
+    private void ManageTeam() => _teamCoordinator.OpenManager(Model.Id, Model.Title);
+
+    /// <summary>Opens this project's git repository / commit feed.</summary>
+    [RelayCommand]
+    private void OpenCommits() => _openCommits?.Invoke();
 
     public TaskItem Model { get; }
 
     public string Title => Model.Title;
 
-    public string MethodologyBadge => Model.Methodology?.ToString() ?? string.Empty;
+    public string MethodologyBadge => Model.Methodology is { } m ? TaskRules.DisplayName(m) : string.Empty;
 
     public string CategoryName => Model.Category.Name;
 
     public string CategoryColor => Model.Category.ColorHex;
 
-    public bool IsKanban => Model.Methodology == Methodology.Kanban;
+    /// <summary>The visualization this methodology maps to. Never user-chosen.</summary>
+    public ChartType ChartType => Model.Methodology is { } m ? TaskRules.ChartTypeFor(m) : ChartType.SequentialGantt;
 
-    public bool IsPhased => !IsKanban;
+    // ---- primary layout family (which "second-column" body the window shows) ----
 
-    public bool GanttAvailable => IsPhased;
+    /// <summary>Status-column board (Kanban, Lean).</summary>
+    public bool UsesBoard => Model.Methodology is Methodology.Kanban or Methodology.Lean;
 
-    public bool ShowPhasedList => IsPhased && !IsGanttView;
+    /// <summary>Flat, unstructured task list (Big Bang).</summary>
+    public bool UsesFlatList => Model.Methodology == Methodology.BigBang;
+
+    /// <summary>
+    /// Phase/sprint/stage-organized, so a List ⇄ chart toggle applies. Includes DevOps —
+    /// its list edits pipeline stages while the chart is the pipeline diagram (never a Gantt).
+    /// </summary>
+    public bool UsesPhases => !UsesBoard && !UsesFlatList;
+
+    // ---- Lean WIP ----
+
+    public bool HasWipLimit => Model.Methodology == Methodology.Lean && Model.WipLimit is > 0;
+
+    public int WipLimit => Model.WipLimit ?? 0;
+
+    // ---- toggle + region visibility ----
+
+    /// <summary>Phase/sprint/stage methodologies get a List ⇄ chart toggle.</summary>
+    public bool HasChartToggle => UsesPhases;
+
+    /// <summary>Label for the "chart" side of the toggle.</summary>
+    public string ChartToggleLabel => Model.Methodology == Methodology.DevOps ? "Pipeline" : "Gantt";
+
+    public bool ShowPhasedList => UsesPhases && !IsGanttView;
+
+    public bool ShowSequentialGantt => IsGanttView && ChartType == ChartType.SequentialGantt;
+
+    public bool ShowVGantt => IsGanttView && ChartType == ChartType.VShapedGantt;
+
+    public bool ShowCyclicalGantt => IsGanttView && ChartType == ChartType.CyclicalGantt;
+
+    public bool ShowAgileGantt => IsGanttView && ChartType == ChartType.AgileGantt;
+
+    public bool ShowPipeline => IsGanttView && Model.Methodology == Methodology.DevOps;
 
     public bool IsCompleted => Model.IsCompleted;
 
     public ObservableCollection<PhaseRowViewModel> Phases { get; } = [];
+
+    /// <summary>Big Bang: the head's children as flat recursive cards.</summary>
+    public ObservableCollection<TaskItemViewModel> FlatItems { get; } = [];
 
     public ObservableCollection<TaskItemViewModel> TodoColumn { get; } = [];
 
@@ -89,6 +154,14 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
 
     public ObservableCollection<TaskItemViewModel> DoneColumn { get; } = [];
 
+    /// <summary>Live count in the In Progress column, for the Lean WIP badge.</summary>
+    public int InProgressCount => InProgressColumn.Count;
+
+    /// <summary>Lean: true when the In Progress column has exceeded its WIP limit.</summary>
+    public bool WipExceeded => HasWipLimit && InProgressColumn.Count > WipLimit;
+
+    public string WipBadge => HasWipLimit ? $"{InProgressColumn.Count}/{WipLimit}" : string.Empty;
+
     // ---- rebuild ----
 
     private void Rebuild()
@@ -96,16 +169,35 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
         TaskRules.RecomputeLocks(Model);
         Phases.Clear();
 
-        if (IsKanban)
+        if (UsesBoard)
         {
             RebuildKanban();
+        }
+        else if (UsesFlatList)
+        {
+            RebuildFlat();
         }
         else
         {
             RebuildPhases();
         }
 
+        if (Model.Methodology == Methodology.DevOps)
+        {
+            Pipeline = new PipelineViewModel(Model);
+        }
+
         RecomputeOverall();
+    }
+
+    private void RebuildFlat()
+    {
+        FlatItems.Clear();
+
+        foreach (var child in Model.Children.OrderByDescending(c => c.Priority).ThenBy(c => c.CreatedAt))
+        {
+            FlatItems.Add(Wrap(child));
+        }
     }
 
     private void RebuildPhases()
@@ -113,14 +205,14 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
         var ordered = Model.Phases.OrderBy(p => p.Order).ToList();
         var byPhase = Model.Children.ToLookup(c => c.PhaseId);
 
-        if (Model.Methodology == Methodology.Iterative && Model.IterationCount is > 0)
+        if (Model.Methodology is { } m && TaskRules.UsesCycles(m) && Model.IterationCount is > 0)
         {
             for (var iteration = 1; iteration <= Model.IterationCount; iteration++)
             {
                 foreach (var phase in ordered)
                 {
                     var slice = byPhase[phase.Id].Where(c => c.IterationNumber == iteration).Select(Wrap);
-                    Phases.Add(new PhaseRowViewModel(phase, slice, $"Iteration {iteration} · {phase.Name}", iteration));
+                    Phases.Add(new PhaseRowViewModel(phase, slice, $"Cycle {iteration} · {phase.Name}", iteration));
                 }
             }
         }
@@ -144,6 +236,10 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
         {
             ColumnFor(child.Status).Add(Wrap(child));
         }
+
+        OnPropertyChanged(nameof(InProgressCount));
+        OnPropertyChanged(nameof(WipExceeded));
+        OnPropertyChanged(nameof(WipBadge));
     }
 
     private ObservableCollection<TaskItemViewModel> ColumnFor(WorkStatus status) => status switch
@@ -181,7 +277,7 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
 
     public async Task EditAsync(TaskItemViewModel node)
     {
-        if (await _editor.EditAsync(node.Model, _developerFeatures))
+        if (await _editor.EditAsync(node.Model, Model.Id, _developerFeatures, Model.Methodology == Methodology.XP))
         {
             await _tasks.UpdateAsync(node.Model);
             await PersistLocksAndRefreshAsync();
@@ -251,7 +347,32 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
 
         if (IsGanttView)
         {
-            Gantt = new GanttViewModel(Model, ActivateTaskFromGantt);
+            RebuildChart();
+        }
+    }
+
+    /// <summary>Rebuilds whichever chart the toggle is currently showing.</summary>
+    private void RebuildChart()
+    {
+        switch (ChartType)
+        {
+            case ChartType.SequentialGantt:
+                Gantt = new GanttViewModel(Model, ActivateTaskFromGantt);
+                break;
+            case ChartType.VShapedGantt:
+                VGantt = new VShapedGanttViewModel(Model);
+                break;
+            case ChartType.CyclicalGantt:
+                CycleGantt = new CyclicalGanttViewModel(Model);
+                break;
+            case ChartType.AgileGantt:
+                AgileGantt = new AgileGanttViewModel(Model, ActivateTaskFromGantt, onEdited: task => _ = PersistEditAsync(task));
+                break;
+        }
+
+        if (Model.Methodology == Methodology.DevOps)
+        {
+            Pipeline = new PipelineViewModel(Model);
         }
     }
 
@@ -339,16 +460,28 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
     {
         if (value)
         {
-            Gantt = new GanttViewModel(Model, ActivateTaskFromGantt);
+            RebuildChart();
         }
 
         OnPropertyChanged(nameof(ShowPhasedList));
+        OnPropertyChanged(nameof(ShowSequentialGantt));
+        OnPropertyChanged(nameof(ShowVGantt));
+        OnPropertyChanged(nameof(ShowCyclicalGantt));
+        OnPropertyChanged(nameof(ShowAgileGantt));
+        OnPropertyChanged(nameof(ShowPipeline));
     }
 
     private void ActivateTaskFromGantt(int taskId)
     {
         HighlightedTaskId = taskId;
         IsGanttView = false;
+    }
+
+    /// <summary>Persists an inline Gantt edit and re-syncs the list/board/overall from the model.</summary>
+    private async Task PersistEditAsync(TaskItem task)
+    {
+        await _tasks.UpdateAsync(task);
+        Rebuild();
     }
 
     partial void OnHighlightedTaskIdChanged(int? value)

@@ -118,22 +118,14 @@ public partial class TaskItemViewModel : ObservableObject
 
     public bool IsOrganized => Model.Methodology is not null;
 
-    public string MethodologyBadge => Model.Methodology?.ToString() ?? string.Empty;
+    public string MethodologyBadge => Model.Methodology is { } m ? TaskRules.DisplayName(m) : string.Empty;
 
     /// <summary>Organize-as only makes sense once a task has children to structure.</summary>
     public bool CanOrganize => HasChildren;
 
     // ---- status / blocked (used in the detail / Kanban view) ----
 
-    public string StatusLabel => Status switch
-    {
-        WorkStatus.Todo => "To Do",
-        WorkStatus.InProgress => "In Progress",
-        WorkStatus.Review => "Review",
-        WorkStatus.Done => "Done",
-        WorkStatus.Blocked => "Blocked",
-        _ => Status.ToString(),
-    };
+    public string StatusLabel => Status.Label();
 
     public bool IsBlocked => Status == WorkStatus.Blocked;
 
@@ -157,8 +149,7 @@ public partial class TaskItemViewModel : ObservableObject
 
     public string AssigneeName => Model.AssignedTo?.Name ?? string.Empty;
 
-    public string AssigneeFirstName =>
-        AssigneeName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+    public string AssigneeFirstName => DisplayText.FirstName(AssigneeName);
 
     public string AssigneeColor => Model.AssignedTo?.InitialsColorHex ?? "#64748B";
 

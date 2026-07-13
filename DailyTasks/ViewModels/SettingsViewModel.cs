@@ -10,7 +10,6 @@ public partial class SettingsViewModel : ObservableObject
     private readonly SettingsService _settings;
     private readonly GlobalHotkeyService _hotkeys;
     private readonly GitWatcherService _gitWatcher;
-    private readonly ITeamCoordinator _team;
 
     [ObservableProperty]
     private string _userName;
@@ -36,12 +35,14 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _gitRepoStatus = string.Empty;
 
-    public SettingsViewModel(SettingsService settings, GlobalHotkeyService hotkeys, GitWatcherService gitWatcher, ITeamCoordinator team)
+    [ObservableProperty]
+    private string _gitCheckResult = string.Empty;
+
+    public SettingsViewModel(SettingsService settings, GlobalHotkeyService hotkeys, GitWatcherService gitWatcher)
     {
         _settings = settings;
         _hotkeys = hotkeys;
         _gitWatcher = gitWatcher;
-        _team = team;
 
         _userName = settings.UserName;
         _isDarkTheme = settings.Theme == ApplicationTheme.Dark;
@@ -61,9 +62,6 @@ public partial class SettingsViewModel : ObservableObject
         : $"{GlobalHotkeyService.Gesture} is unavailable; another app has claimed it.";
 
     partial void OnUserNameChanged(string value) => _settings.UserName = value;
-
-    [RelayCommand]
-    private void ManageTeam() => _team.OpenManager();
 
     partial void OnIsDarkThemeChanged(bool value)
     {
@@ -90,6 +88,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         _settings.DeveloperFeaturesEnabled = value;
         UpdateGitRepoStatus();
+        CheckCommitsNowCommand.NotifyCanExecuteChanged();
 
         if (value)
         {
@@ -101,7 +100,27 @@ public partial class SettingsViewModel : ObservableObject
     {
         _settings.GitRepoPath = value;
         UpdateGitRepoStatus();
+        GitCheckResult = string.Empty;
+        CheckCommitsNowCommand.NotifyCanExecuteChanged();
     }
+
+    /// <summary>Scan the repo right now instead of waiting for the 30-second poll, and report.</summary>
+    [RelayCommand(CanExecute = nameof(CanCheckNow))]
+    private async Task CheckCommitsNow()
+    {
+        GitCheckResult = "Checking recent commits…";
+
+        var completed = await _gitWatcher.PollAsync();
+
+        GitCheckResult = completed switch
+        {
+            0 => "No matching commits yet. Add a task's git link to a commit message, then check again.",
+            1 => "Completed 1 task from a matching commit.",
+            _ => $"Completed {completed} tasks from matching commits.",
+        };
+    }
+
+    private bool CanCheckNow() => DeveloperFeaturesEnabled && GitWatcherService.IsValidRepo(GitRepoPath);
 
     private void UpdateGitRepoStatus()
     {
