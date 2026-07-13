@@ -8,6 +8,9 @@ public interface ITeamService
 {
     Task<IReadOnlyList<TeamMember>> GetAllAsync();
 
+    /// <summary>The members belonging to one project (its own team).</summary>
+    Task<IReadOnlyList<TeamMember>> GetForProjectAsync(int projectId);
+
     Task AddAsync(TeamMember member);
 
     Task UpdateAsync(TeamMember member);
@@ -22,6 +25,15 @@ public sealed class TeamService(IDbContextFactory<AppDbContext> factory) : ITeam
     {
         await using var db = await factory.CreateDbContextAsync();
         return await db.TeamMembers.AsNoTracking().OrderBy(m => m.Name).ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<TeamMember>> GetForProjectAsync(int projectId)
+    {
+        await using var db = await factory.CreateDbContextAsync();
+        return await db.TeamMembers.AsNoTracking()
+            .Where(m => m.OwnerProjectId == projectId)
+            .OrderBy(m => m.Name)
+            .ToListAsync();
     }
 
     public async Task AddAsync(TeamMember member)

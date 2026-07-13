@@ -115,7 +115,7 @@ public sealed class TaskService(IDbContextFactory<AppDbContext> factory) : ITask
         }
     }
 
-    public async Task<TaskItem?> OrganizeAsync(TaskItem task, Methodology methodology, IReadOnlyList<string>? customPhases = null, int? iterationCount = null)
+    public async Task<TaskItem?> OrganizeAsync(TaskItem task, Methodology methodology, int? iterationCount = null, int? sprintLengthDays = null, int? wipLimit = null)
     {
         await using var db = await factory.CreateDbContextAsync();
 
@@ -125,25 +125,50 @@ public sealed class TaskService(IDbContextFactory<AppDbContext> factory) : ITask
             return null;
         }
 
-        existing.Methodology = methodology;
-        existing.CustomPhases = methodology == Methodology.Custom ? (customPhases ?? []).ToList() : [];
-        existing.IterationCount = methodology == Methodology.Iterative ? Math.Max(1, iterationCount ?? 1) : null;
+        var usesCount = TaskRules.UsesCycles(methodology) || TaskRules.IsSprintBased(methodology);
+        var count = Math.Max(1, iterationCount ?? (TaskRules.IsSprintBased(methodology) ? 2 : 3));
 
-        // Reseed phases from scratch.
+        existing.Methodology = methodology;
+        existing.IterationCount = usesCount ? count : null;
+        existing.SprintLengthDays = TaskRules.IsSprintBased(methodology)
+            ? Math.Max(1, sprintLengthDays ?? TaskRules.DefaultSprintLengthDays)
+            : null;
+        existing.WipLimit = methodology == Methodology.Lean ? wipLimit : null;
+
+        // Reseed phases from scratch (clears children's PhaseId via SetNull).
         db.Phases.RemoveRange(existing.Phases);
 
-        foreach (var (name, order) in PhaseNamesFor(methodology, customPhases).Select((n, i) => (n, i)))
+        var created = new List<Phase>();
+        foreach (var (name, order) in TaskRules.SeedPhaseNames(methodology, count).Select((n, i) => (n, i)))
         {
-            existing.Phases.Add(new Phase
+            var phase = new Phase
             {
                 OwnerTaskId = existing.Id,
                 Name = name,
                 Order = order,
                 IsLocked = methodology == Methodology.Waterfall && order > 0,
-            });
+            };
+            existing.Phases.Add(phase);
+            created.Add(phase);
         }
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(); // assigns phase Ids
+
+        // V-Model: link each development phase to its paired testing phase.
+        if (methodology == Methodology.VModel)
+        {
+            var byName = created.ToDictionary(p => p.Name);
+            foreach (var (dev, test) in TaskRules.VModelPairs)
+            {
+                if (byName.TryGetValue(dev, out var devPhase) && byName.TryGetValue(test, out var testPhase))
+                {
+                    devPhase.PairedPhaseId = testPhase.Id;
+                }
+            }
+
+            await db.SaveChangesAsync();
+        }
+
         return await GetAsync(task.Id);
     }
 
@@ -158,8 +183,9 @@ public sealed class TaskService(IDbContextFactory<AppDbContext> factory) : ITask
         }
 
         existing.Methodology = null;
-        existing.CustomPhases = [];
         existing.IterationCount = null;
+        existing.SprintLengthDays = null;
+        existing.WipLimit = null;
         db.Phases.RemoveRange(existing.Phases); // children's PhaseId falls to null (SetNull)
 
         await db.SaveChangesAsync();
@@ -186,11 +212,6 @@ public sealed class TaskService(IDbContextFactory<AppDbContext> factory) : ITask
 
         await db.SaveChangesAsync();
     }
-
-    private static IReadOnlyList<string> PhaseNamesFor(Methodology methodology, IReadOnlyList<string>? customPhases) =>
-        methodology == Methodology.Custom
-            ? (customPhases ?? []).Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => n.Trim()).ToList()
-            : TaskRules.DefaultPhaseNames(methodology);
 
     private static TaskItem BuildNextOccurrence(TaskItem task) => new()
     {

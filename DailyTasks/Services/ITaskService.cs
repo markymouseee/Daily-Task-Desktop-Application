@@ -28,10 +28,11 @@ public interface ITaskService
     Task DeleteAsync(TaskItem task);
 
     /// <summary>
-    /// Organizes a task as a methodology: sets it on the task and seeds the default phase
-    /// set. Persists and returns the reloaded task graph.
+    /// Organizes a task as a methodology: sets it on the task, seeds the default phase set
+    /// (including sprint phases and V-Model pairing) and records the cycle/sprint/WIP config.
+    /// Persists and returns the reloaded task graph.
     /// </summary>
-    Task<TaskItem?> OrganizeAsync(TaskItem task, Methodology methodology, IReadOnlyList<string>? customPhases = null, int? iterationCount = null);
+    Task<TaskItem?> OrganizeAsync(TaskItem task, Methodology methodology, int? iterationCount = null, int? sprintLengthDays = null, int? wipLimit = null);
 
     /// <summary>Clears a task's methodology and removes its phases (children keep their place).</summary>
     Task ClearMethodologyAsync(TaskItem task);
