@@ -6,11 +6,11 @@ namespace DailyTasks.Views;
 
 public sealed class SubtaskEditor(ITeamService team) : ISubtaskEditor
 {
-    public async Task<bool> EditAsync(TaskItem subtask, bool developerFeatures)
+    public async Task<bool> EditAsync(TaskItem subtask, int projectId, bool developerFeatures, bool showXpPractices = false)
     {
-        var members = await team.GetAllAsync();
+        var members = await team.GetForProjectAsync(projectId);
 
-        var window = new SubtaskEditWindow(subtask, developerFeatures, members)
+        var window = new SubtaskEditWindow(subtask, developerFeatures, members, showXpPractices)
         {
             Owner = Application.Current.MainWindow,
         };

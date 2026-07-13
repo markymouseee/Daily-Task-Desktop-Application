@@ -10,6 +10,8 @@ public sealed class TaskCoordinator(
     ICategoryService categories,
     ISubtaskEditor subtaskEditor,
     IProjectExporter exporter,
+    ITeamCoordinator teamCoordinator,
+    GitWatcherService gitWatcher,
     FocusService focus,
     SettingsService settings) : ITaskCoordinator
 {
@@ -62,7 +64,7 @@ public sealed class TaskCoordinator(
         };
 
         await tasks.AddAsync(task);
-        await tasks.OrganizeAsync(task, window.Methodology, window.CustomPhases, window.IterationCount);
+        await tasks.OrganizeAsync(task, window.Methodology, window.IterationCount, window.SprintLengthDays, window.WipLimit);
         await OpenDetailAsync(task.Id);
         return task.Id;
     }
@@ -83,7 +85,7 @@ public sealed class TaskCoordinator(
         }
         else
         {
-            await tasks.OrganizeAsync(task, window.Methodology, window.CustomPhases, window.IterationCount);
+            await tasks.OrganizeAsync(task, window.Methodology, window.IterationCount, window.SprintLengthDays, window.WipLimit);
         }
 
         return true;
@@ -98,8 +100,21 @@ public sealed class TaskCoordinator(
             return;
         }
 
-        var viewModel = new TaskDetailViewModel(head, tasks, subtaskEditor, exporter, focus, settings.DeveloperFeaturesEnabled);
+        var viewModel = new TaskDetailViewModel(
+            head, tasks, subtaskEditor, exporter, teamCoordinator, focus, settings.DeveloperFeaturesEnabled,
+            openCommits: () => OpenCommits(head));
+
         var window = new TaskDetailWindow(viewModel) { Owner = Application.Current.MainWindow };
+        window.ShowDialog();
+    }
+
+    private void OpenCommits(TaskItem project)
+    {
+        var window = new CommitsWindow(new CommitsViewModel(project, gitWatcher, tasks))
+        {
+            Owner = Application.Current.MainWindow,
+        };
+
         window.ShowDialog();
     }
 }

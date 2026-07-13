@@ -6,9 +6,9 @@ namespace DailyTasks.Views;
 
 public sealed class TeamCoordinator(ITeamService team) : ITeamCoordinator
 {
-    public void OpenManager()
+    public void OpenManager(int projectId, string projectTitle)
     {
-        var window = new TeamWindow(new TeamViewModel(team))
+        var window = new TeamWindow(new TeamViewModel(team, projectId, projectTitle))
         {
             Owner = Application.Current.MainWindow,
         };
