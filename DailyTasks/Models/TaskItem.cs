@@ -124,6 +124,13 @@ public class TaskItem
     /// <summary>A branch name or commit tag; the git watcher auto-completes on a match.</summary>
     public string? GitLink { get; set; }
 
+    /// <summary>
+    /// Local git repository this project tracks. The commit feed lists its commits and the
+    /// watcher scans it to auto-complete the project's linked subtasks. Only meaningful on a
+    /// methodology-organized head; null otherwise.
+    /// </summary>
+    public string? GitRepoPath { get; set; }
+
     /// <summary>When set, completing the task spawns the next occurrence.</summary>
     public RecurrenceKind Recurrence { get; set; } = RecurrenceKind.None;
 

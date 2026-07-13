@@ -164,6 +164,10 @@ namespace DailyTasks.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("GitRepoPath")
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("IterationCount")
                         .HasColumnType("INTEGER");
 
@@ -263,6 +267,9 @@ namespace DailyTasks.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("OwnerProjectId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(60)
@@ -274,6 +281,8 @@ namespace DailyTasks.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerProjectId");
 
                     b.ToTable("TeamMembers");
                 });
@@ -336,6 +345,16 @@ namespace DailyTasks.Data.Migrations
                     b.Navigation("Parent");
 
                     b.Navigation("Phase");
+                });
+
+            modelBuilder.Entity("DailyTasks.Models.TeamMember", b =>
+                {
+                    b.HasOne("DailyTasks.Models.TaskItem", "OwnerProject")
+                        .WithMany()
+                        .HasForeignKey("OwnerProjectId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("OwnerProject");
                 });
 
             modelBuilder.Entity("DailyTasks.Models.Category", b =>

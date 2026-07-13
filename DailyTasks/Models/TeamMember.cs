@@ -32,6 +32,15 @@ public class TeamMember
     /// <summary>Avatar badge background, as "#RRGGBB".</summary>
     public string InitialsColorHex { get; set; } = "#3B82F6";
 
+    /// <summary>
+    /// The project (methodology-organized head) this member belongs to. Teams are per-project:
+    /// a member is only offered as an assignee within their own project. Null = a legacy member
+    /// from before teams were scoped.
+    /// </summary>
+    public int? OwnerProjectId { get; set; }
+
+    public TaskItem? OwnerProject { get; set; }
+
     /// <summary>Tasks currently assigned to this member.</summary>
     public ICollection<TaskItem> Tasks { get; } = [];
 }
