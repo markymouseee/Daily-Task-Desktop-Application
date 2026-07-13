@@ -71,6 +71,18 @@
                     Margin="0,14,0,6"
                     FontSize="12"
                     Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                    Text="Scrum role (optional)" />
+                <ComboBox HorizontalAlignment="Stretch" SelectedIndex="{Binding ScrumRoleIndex}">
+                    <ComboBoxItem Content="None" />
+                    <ComboBoxItem Content="Scrum Master" />
+                    <ComboBoxItem Content="Product Owner" />
+                    <ComboBoxItem Content="Dev Team" />
+                </ComboBox>
+
+                <TextBlock
+                    Margin="0,14,0,6"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                     Text="Avatar colour" />
                 <ItemsControl ItemsSource="{Binding Swatches}">
                     <ItemsControl.ItemsPanel>
@@ -164,11 +176,26 @@
                                             FontWeight="SemiBold"
                                             Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                             Text="{Binding Name}" />
-                                        <TextBlock
-                                            FontSize="12"
-                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                            Text="{Binding Role}"
-                                            Visibility="{Binding Role, Converter={StaticResource EmptyToVisibility}}" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                FontSize="12"
+                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                Text="{Binding Role}"
+                                                Visibility="{Binding Role, Converter={StaticResource EmptyToVisibility}}" />
+                                            <Border
+                                                Margin="6,0,0,0"
+                                                Padding="6,1"
+                                                VerticalAlignment="Center"
+                                                Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                                CornerRadius="7"
+                                                Visibility="{Binding ScrumRoleText, Converter={StaticResource EmptyToVisibility}}">
+                                                <TextBlock
+                                                    FontSize="10.5"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="White"
+                                                    Text="{Binding ScrumRoleText}" />
+                                            </Border>
+                                        </StackPanel>
                                     </StackPanel>
 
                                     <StackPanel
