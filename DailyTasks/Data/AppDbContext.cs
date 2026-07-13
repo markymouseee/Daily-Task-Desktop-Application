@@ -45,6 +45,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         task.Property(t => t.WhyReason).HasMaxLength(300);
         task.Property(t => t.ContextResumeNote).HasMaxLength(500);
         task.Property(t => t.GitLink).HasMaxLength(200);
+        task.Property(t => t.GitRepoPath).HasMaxLength(400);
         task.Property(t => t.BlockedReason).HasMaxLength(300);
 
         // IsCompleted is a convenience over Status, not its own column.
@@ -123,6 +124,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         member.Property(m => m.Role).HasMaxLength(60);
         member.Property(m => m.InitialsColorHex).IsRequired().HasMaxLength(9);
         member.Property(m => m.ScrumRole).HasConversion<string>().HasMaxLength(16);
+
+        // Teams are per-project: deleting a project removes its members (their subtasks are
+        // being cascaded away with it anyway).
+        member.HasOne(m => m.OwnerProject)
+            .WithMany()
+            .HasForeignKey(m => m.OwnerProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        member.HasIndex(m => m.OwnerProjectId);
 
         var interruption = modelBuilder.Entity<InterruptionEvent>();
 
