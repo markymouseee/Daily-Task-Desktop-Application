@@ -95,6 +95,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(t => t.AssignedToId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Multi-assignment: an activity can have many assignees. Deleting a member removes
+        // their links (join rows cascade) but leaves the work.
+        task.HasMany(t => t.Assignees)
+            .WithMany()
+            .UsingEntity(join => join.ToTable("TaskAssignees"));
+
         task.HasIndex(t => t.DueDate);
         task.HasIndex(t => t.ParentTaskId);
         task.HasIndex(t => t.PhaseId);
@@ -128,7 +134,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         // Teams are per-project: deleting a project removes its members (their subtasks are
         // being cascaded away with it anyway).
         member.HasOne(m => m.OwnerProject)
-            .WithMany()
+            .WithMany(t => t.ProjectTeam)
             .HasForeignKey(m => m.OwnerProjectId)
             .OnDelete(DeleteBehavior.Cascade);
 
