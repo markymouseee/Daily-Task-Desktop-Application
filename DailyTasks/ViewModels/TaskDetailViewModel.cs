@@ -250,7 +250,7 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
         _ => TodoColumn,
     };
 
-    private TaskItemViewModel Wrap(TaskItem child) => new(child, this);
+    private TaskItemViewModel Wrap(TaskItem child) => new(child, this, projectTeamCount: Model.ProjectTeam.Count);
 
     private void RecomputeOverall()
     {
@@ -449,6 +449,30 @@ public partial class TaskDetailViewModel : ObservableObject, ITaskCardHost
         try
         {
             await _exporter.WriteAsync(Model, path);
+        }
+        finally
+        {
+            IsExporting = false;
+        }
+    }
+
+    /// <summary>True for the methodologies whose chart is a Gantt (so a Gantt export makes sense).</summary>
+    public bool HasGantt => ChartType
+        is ChartType.SequentialGantt or ChartType.VShapedGantt or ChartType.CyclicalGantt or ChartType.AgileGantt;
+
+    [RelayCommand]
+    private async Task ExportGantt()
+    {
+        var path = _exporter.PromptForGanttPath(Model);
+        if (path is null)
+        {
+            return;
+        }
+
+        IsExporting = true;
+        try
+        {
+            await _exporter.WriteGanttAsync(Model, path);
         }
         finally
         {

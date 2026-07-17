@@ -35,17 +35,20 @@ public partial class TaskItemViewModel : ObservableObject
     [ObservableProperty]
     private string _newChildTitle = string.Empty;
 
-    public TaskItemViewModel(TaskItem model, ITaskCardHost host, int depth = 0)
+    private readonly int _projectTeamCount;
+
+    public TaskItemViewModel(TaskItem model, ITaskCardHost host, int depth = 0, int projectTeamCount = 0)
     {
         Model = model;
         _host = host;
         Depth = depth;
+        _projectTeamCount = projectTeamCount;
         _isCompleted = model.IsCompleted;
         _status = model.Status;
 
         foreach (var child in model.Children.OrderByDescending(c => c.Priority).ThenBy(c => c.CreatedAt))
         {
-            Children.Add(new TaskItemViewModel(child, host, depth + 1) { ParentNode = this });
+            Children.Add(new TaskItemViewModel(child, host, depth + 1, projectTeamCount) { ParentNode = this });
         }
     }
 
@@ -145,13 +148,23 @@ public partial class TaskItemViewModel : ObservableObject
 
     // ---- assignee ----
 
-    public bool HasAssignee => Model.AssignedTo is not null;
+    private AssigneeDisplay AssigneeInfo => AssigneeSummary.Of(Model.Assignees, _projectTeamCount);
 
-    public string AssigneeName => Model.AssignedTo?.Name ?? string.Empty;
+    public bool HasAssignee => AssigneeInfo.HasAny;
 
-    public string AssigneeFirstName => DisplayText.FirstName(AssigneeName);
+    public bool IsTeamAssigned => AssigneeInfo.IsTeam;
 
-    public string AssigneeColor => Model.AssignedTo?.InitialsColorHex ?? "#64748B";
+    public string AssigneeName => AssigneeInfo.Chips.FirstOrDefault()?.Name ?? string.Empty;
+
+    public string AssigneeFirstName => AssigneeInfo.Chips.FirstOrDefault()?.FirstName ?? string.Empty;
+
+    public string AssigneeColor => AssigneeInfo.Chips.FirstOrDefault()?.ColorHex ?? "#64748B";
+
+    public bool HasExtraAssignees => AssigneeInfo.Chips.Count > 1;
+
+    public string ExtraAssigneeText => AssigneeInfo.Chips.Count > 1 ? $"+{AssigneeInfo.Chips.Count - 1}" : string.Empty;
+
+    public string AllAssigneesText => AssigneeInfo.IsTeam ? "Whole team" : string.Join(", ", AssigneeInfo.Chips.Select(c => c.Name));
 
     // ---- commands ----
 

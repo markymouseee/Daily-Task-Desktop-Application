@@ -30,11 +30,21 @@ public sealed class AgileGanttRow
 
     public bool HasAssignee { get; init; }
 
+    /// <summary>Whole team assigned — shown as a single "Team" pill.</summary>
+    public bool IsTeamAssigned { get; init; }
+
     public string AssigneeName { get; init; } = string.Empty;
 
     public string AssigneeFirstName { get; init; } = string.Empty;
 
     public string AssigneeColor { get; init; } = "#64748B";
+
+    public bool HasExtraAssignees { get; init; }
+
+    public string ExtraAssigneeText { get; init; } = string.Empty;
+
+    /// <summary>Comma-joined names (or "Whole team"), for the tooltip.</summary>
+    public string AllAssigneesText { get; init; } = string.Empty;
 
     public string StartText { get; init; } = string.Empty;
 
@@ -66,9 +76,6 @@ public sealed class AgileGanttRow
 
     public double BarOpacity { get; init; } = 1;
 }
-
-/// <summary>A selectable "% done" value in the Gantt, backed by a concrete work status.</summary>
-public sealed record StatusOption(string Label, WorkStatus Status);
 
 /// <summary>
 /// A real Gantt for the agile methodologies: activities grouped under their sprint, with a
@@ -106,25 +113,26 @@ public partial class AgileGanttViewModel : ObservableObject
         Rebuild();
     }
 
-    /// <summary>The % values a leaf activity can be set to inline, each mapped to a work status.</summary>
-    public IReadOnlyList<StatusOption> StatusOptions { get; } =
-    [
-        new("0%", WorkStatus.Todo),
-        new("50%", WorkStatus.InProgress),
-        new("75%", WorkStatus.Review),
-        new("100%", WorkStatus.Done),
-        new("Blocked", WorkStatus.Blocked),
-    ];
-
-    /// <summary>Persists an inline % edit on a leaf activity and re-lays the chart so the bar and colour follow.</summary>
-    public void SetStatus(AgileGanttRow row, WorkStatus status)
+    /// <summary>
+    /// Persists a typed "% done" on a leaf activity: stores the exact percentage, derives a
+    /// matching status so the colour/board follow automatically, and re-lays the chart.
+    /// </summary>
+    public void SetPercent(AgileGanttRow row, int percent)
     {
-        if (row.Model is not { } task || task.Status == status)
+        percent = Math.Clamp(percent, 0, 100);
+
+        // Compare to the model's current effective % (not the possibly-stale row) so an
+        // unchanged commit — or a duplicate event during rebuild — is a no-op.
+        if (row.Model is not { } task || percent == PercentFor(task))
         {
             return;
         }
 
-        task.Status = status;
+        task.ProgressPercent = percent;
+        task.Status = percent >= 100 ? WorkStatus.Done
+            : percent > 0 ? WorkStatus.InProgress
+            : WorkStatus.Todo;
+
         _onEdited?.Invoke(task);
         Rebuild();
     }
@@ -262,7 +270,8 @@ public partial class AgileGanttViewModel : ObservableObject
 
         var hasBar = start is not null && end is not null;
         var percent = PercentFor(task);
-        var assignee = task.AssignedTo;
+        var assignees = AssigneeSummary.Of(task.Assignees, _head.ProjectTeam.Count);
+        var first = assignees.Chips.FirstOrDefault();
 
         var width = hasBar ? Calculator.Width(start!.Value, end!.Value) : 0;
 
@@ -275,10 +284,14 @@ public partial class AgileGanttViewModel : ObservableObject
             Model = task,
             IsLeaf = task.Children.Count == 0,
             Activity = task.Title,
-            HasAssignee = assignee is not null,
-            AssigneeName = assignee?.Name ?? string.Empty,
-            AssigneeFirstName = DisplayText.FirstName(assignee?.Name),
-            AssigneeColor = assignee?.InitialsColorHex ?? "#64748B",
+            HasAssignee = assignees.HasAny,
+            IsTeamAssigned = assignees.IsTeam,
+            AssigneeName = first?.Name ?? string.Empty,
+            AssigneeFirstName = first?.FirstName ?? string.Empty,
+            AssigneeColor = first?.ColorHex ?? "#64748B",
+            HasExtraAssignees = assignees.Chips.Count > 1,
+            ExtraAssigneeText = assignees.Chips.Count > 1 ? $"+{assignees.Chips.Count - 1}" : string.Empty,
+            AllAssigneesText = assignees.IsTeam ? "Whole team" : string.Join(", ", assignees.Chips.Select(c => c.Name)),
             StartText = start?.ToString("MMM d") ?? "—",
             EndText = end?.ToString("MMM d") ?? "—",
             DurationText = hasBar ? $"{(end!.Value - start!.Value).Days + 1}d" : "—",
@@ -295,7 +308,11 @@ public partial class AgileGanttViewModel : ObservableObject
         };
     }
 
-    /// <summary>Completion % for an activity: its rollup if it has children, else status-derived.</summary>
+    /// <summary>
+    /// Completion % for an activity: the rollup if it has children; otherwise a Done task is
+    /// always 100, a manually-typed <see cref="TaskItem.ProgressPercent"/> wins if set, and we
+    /// fall back to a status-derived value.
+    /// </summary>
     private static int PercentFor(TaskItem task)
     {
         if (task.Children.Count > 0)
@@ -303,9 +320,18 @@ public partial class AgileGanttViewModel : ObservableObject
             return Progress.Of(TaskTree.Descendants(task)).Percent;
         }
 
+        if (task.Status == WorkStatus.Done)
+        {
+            return 100;
+        }
+
+        if (task.ProgressPercent is { } manual)
+        {
+            return Math.Clamp(manual, 0, 100);
+        }
+
         return task.Status switch
         {
-            WorkStatus.Done => 100,
             WorkStatus.Review => 75,
             WorkStatus.InProgress => 50,
             _ => 0,
