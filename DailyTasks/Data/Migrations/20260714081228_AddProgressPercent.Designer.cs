@@ -3,6 +3,7 @@ using System;
 using DailyTasks.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DailyTasks.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260714081228_AddProgressPercent")]
+    partial class AddProgressPercent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -290,21 +293,6 @@ namespace DailyTasks.Data.Migrations
                     b.ToTable("TeamMembers");
                 });
 
-            modelBuilder.Entity("TaskItemTeamMember", b =>
-                {
-                    b.Property<int>("AssigneesId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("TaskItemId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("AssigneesId", "TaskItemId");
-
-                    b.HasIndex("TaskItemId");
-
-                    b.ToTable("TaskAssignees", (string)null);
-                });
-
             modelBuilder.Entity("DailyTasks.Models.InterruptionEvent", b =>
                 {
                     b.HasOne("DailyTasks.Models.TaskItem", "TaskItem")
@@ -368,26 +356,11 @@ namespace DailyTasks.Data.Migrations
             modelBuilder.Entity("DailyTasks.Models.TeamMember", b =>
                 {
                     b.HasOne("DailyTasks.Models.TaskItem", "OwnerProject")
-                        .WithMany("ProjectTeam")
+                        .WithMany()
                         .HasForeignKey("OwnerProjectId")
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("OwnerProject");
-                });
-
-            modelBuilder.Entity("TaskItemTeamMember", b =>
-                {
-                    b.HasOne("DailyTasks.Models.TeamMember", null)
-                        .WithMany()
-                        .HasForeignKey("AssigneesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DailyTasks.Models.TaskItem", null)
-                        .WithMany()
-                        .HasForeignKey("TaskItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("DailyTasks.Models.Category", b =>
@@ -405,8 +378,6 @@ namespace DailyTasks.Data.Migrations
                     b.Navigation("Children");
 
                     b.Navigation("Phases");
-
-                    b.Navigation("ProjectTeam");
                 });
 
             modelBuilder.Entity("DailyTasks.Models.TeamMember", b =>
