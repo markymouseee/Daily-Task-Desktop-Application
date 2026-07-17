@@ -12,6 +12,7 @@
     MinHeight="520"
     Background="{DynamicResource ApplicationBackgroundBrush}"
     ExtendsContentIntoTitleBar="True"
+    Icon="pack://application:,,,/Assets/appicon.ico"
     FontFamily="Segoe UI Variable Text"
     WindowBackdropType="Mica"
     WindowCornerPreference="Round"
@@ -103,18 +104,11 @@
                 <!--  Logo + app name + divider  -->
                 <StackPanel DockPanel.Dock="Top" Margin="16,14,16,0">
                     <StackPanel Orientation="Horizontal">
-                        <Border
+                        <Image
                             Width="34"
                             Height="34"
-                            Background="{DynamicResource AccentFillColorDefaultBrush}"
-                            CornerRadius="9">
-                            <ui:SymbolIcon
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="18"
-                                Foreground="White"
-                                Symbol="TaskListSquareLtr24" />
-                        </Border>
+                            RenderOptions.BitmapScalingMode="HighQuality"
+                            Source="pack://application:,,,/Assets/appicon.ico" />
                         <TextBlock
                             Margin="12,0,0,0"
                             VerticalAlignment="Center"

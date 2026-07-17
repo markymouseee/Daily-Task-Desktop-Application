@@ -145,11 +145,20 @@
                             <ui:Button
                                 Margin="8,0,0,0"
                                 Appearance="Secondary"
+                                Command="{Binding ExportGanttCommand}"
+                                Content="Export Gantt"
+                                Icon="{ui:SymbolIcon DataBarHorizontal24}"
+                                IsEnabled="{Binding IsExporting, Converter={StaticResource InverseBool}}"
+                                ToolTip="Export the Gantt chart to a styled Excel workbook"
+                                Visibility="{Binding HasGantt, Converter={StaticResource BoolToVisibility}}" />
+                            <ui:Button
+                                Margin="8,0,0,0"
+                                Appearance="Secondary"
                                 Command="{Binding ExportCommand}"
                                 Content="Export"
                                 Icon="{ui:SymbolIcon DocumentTable24}"
                                 IsEnabled="{Binding IsExporting, Converter={StaticResource InverseBool}}"
-                                ToolTip="Export SDLC to Excel" />
+                                ToolTip="Export the full SDLC to Excel" />
                         </StackPanel>
                     </StackPanel>
                 </Grid>

@@ -70,8 +70,51 @@
             Margin="0,14,0,6"
             FontSize="12"
             Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-            Text="Assigned to" />
-        <ComboBox x:Name="AssigneeBox" DisplayMemberPath="Name" HorizontalAlignment="Stretch" />
+            Text="Assigned to  (select any — all of them shows as “Team”)" />
+        <Border
+            Background="{DynamicResource ControlFillColorDefaultBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="6">
+            <StackPanel>
+                <ScrollViewer MaxHeight="160" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="AssigneeList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <CheckBox Margin="8,5" IsChecked="{Binding IsSelected, Mode=TwoWay}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border
+                                            Width="11"
+                                            Height="11"
+                                            VerticalAlignment="Center"
+                                            Background="{Binding ColorBrush}"
+                                            CornerRadius="6" />
+                                        <TextBlock
+                                            Margin="8,0,0,0"
+                                            VerticalAlignment="Center"
+                                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                            Text="{Binding Member.Name}" />
+                                        <TextBlock
+                                            Margin="8,0,0,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="11"
+                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                            Text="{Binding Member.Role}" />
+                                    </StackPanel>
+                                </CheckBox>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <TextBlock
+                    x:Name="NoTeamHint"
+                    Margin="10,8"
+                    FontSize="12"
+                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                    Text="No team members yet — add them with the project's Team button."
+                    Visibility="Collapsed" />
+            </StackPanel>
+        </Border>
 
         <!--  XP practice tags, only under an XP head  -->
         <StackPanel x:Name="XpRow" Visibility="Collapsed">

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using DailyTasks.Services;
 using DailyTasks.ViewModels;
 using Wpf.Ui.Abstractions;
@@ -29,7 +30,22 @@ public partial class MainWindow : FluentWindow
         UpdateThemeIcon();
 
         // Selecting Today raises Checked, which performs the first navigation.
-        Loaded += (_, _) => TodayNav.IsChecked = true;
+        Loaded += (_, _) =>
+        {
+            TodayNav.IsChecked = true;
+
+            // First run: show the walkthrough once the Today page has painted behind it.
+            if (!_settings.TutorialCompleted)
+            {
+                Dispatcher.BeginInvoke(ShowWelcomeTour, DispatcherPriority.Background);
+            }
+        };
+    }
+
+    private void ShowWelcomeTour()
+    {
+        new WelcomeWindow { Owner = this }.ShowDialog();
+        _settings.TutorialCompleted = true;
     }
 
     private async void OnNavChecked(object sender, RoutedEventArgs e)
