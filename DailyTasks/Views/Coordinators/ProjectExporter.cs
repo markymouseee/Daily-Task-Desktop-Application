@@ -24,6 +24,23 @@ public sealed class ProjectExporter : IProjectExporter
     public Task WriteAsync(TaskItem head, string path) =>
         Task.Run(() => ProjectWorkbook.Save(head, path));
 
+    public string? PromptForGanttPath(TaskItem head)
+    {
+        var dialog = new SaveFileDialog
+        {
+            Title = "Export Gantt to Excel",
+            FileName = $"{SafeFileName(head.Title)}_Gantt_{DateTime.Now:yyyyMMdd}.xlsx",
+            Filter = "Excel workbook (*.xlsx)|*.xlsx",
+            DefaultExt = ".xlsx",
+            AddExtension = true,
+        };
+
+        return dialog.ShowDialog() == true ? dialog.FileName : null;
+    }
+
+    public Task WriteGanttAsync(TaskItem head, string path) =>
+        Task.Run(() => ProjectWorkbook.SaveGantt(head, path));
+
     private static string SafeFileName(string title)
     {
         var cleaned = new string(title.Where(c => !Path.GetInvalidFileNameChars().Contains(c)).ToArray()).Trim();

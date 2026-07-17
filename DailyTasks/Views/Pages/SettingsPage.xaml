@@ -23,6 +23,39 @@
                     <ui:SymbolIcon
                         VerticalAlignment="Center"
                         FontSize="20"
+                        Symbol="BookQuestionMark24" />
+                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                            Text="Getting started" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                            Text="Replay the walkthrough, or send beta feedback." />
+                    </StackPanel>
+                </StackPanel>
+            </ui:CardControl.Header>
+
+            <StackPanel Orientation="Horizontal">
+                <ui:Button
+                    Click="OnReplayTour"
+                    Content="Show tour"
+                    Icon="{ui:SymbolIcon Play24}" />
+                <ui:Button
+                    Margin="8,0,0,0"
+                    Click="OnSendFeedback"
+                    Content="Send feedback"
+                    Icon="{ui:SymbolIcon Mail24}" />
+            </StackPanel>
+        </ui:CardControl>
+
+        <ui:CardControl Margin="0,0,0,10">
+            <ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon
+                        VerticalAlignment="Center"
+                        FontSize="20"
                         Symbol="Person24" />
                     <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
                         <TextBlock
