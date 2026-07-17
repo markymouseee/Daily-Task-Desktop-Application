@@ -28,6 +28,7 @@ PublishScripts/
 .vs/
 .vscode/
 .idea/
+installer/*
 *.suo
 *.user
 *.userosscache
