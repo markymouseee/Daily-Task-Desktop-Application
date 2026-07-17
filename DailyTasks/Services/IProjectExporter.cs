@@ -11,6 +11,12 @@ public interface IProjectExporter
     /// <summary>Shows a Save dialog and returns the chosen path, or null if cancelled.</summary>
     string? PromptForPath(TaskItem head);
 
-    /// <summary>Writes the workbook to the path on a background thread.</summary>
+    /// <summary>Writes the full SDLC workbook to the path on a background thread.</summary>
     Task WriteAsync(TaskItem head, string path);
+
+    /// <summary>Save dialog for a Gantt-only workbook; returns the chosen path or null.</summary>
+    string? PromptForGanttPath(TaskItem head);
+
+    /// <summary>Writes a styled, Gantt-only workbook to the path on a background thread.</summary>
+    Task WriteGanttAsync(TaskItem head, string path);
 }

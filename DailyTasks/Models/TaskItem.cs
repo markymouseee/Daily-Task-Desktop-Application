@@ -39,6 +39,12 @@ public class TaskItem
 
     public double? ActualHours { get; set; }
 
+    /// <summary>
+    /// Manual completion percentage (0–100) typed on the Gantt. Null = derive it from
+    /// <see cref="Status"/>. A Done task always reads as 100 regardless.
+    /// </summary>
+    public int? ProgressPercent { get; set; }
+
     // ---- status ----
 
     /// <summary>
@@ -100,9 +106,19 @@ public class TaskItem
 
     // ---- assignee ----
 
+    /// <summary>The "primary" assignee (first of <see cref="Assignees"/>). Kept for the simpler
+    /// single-avatar views; multi-assignment lives in <see cref="Assignees"/>.</summary>
     public int? AssignedToId { get; set; }
 
     public TeamMember? AssignedTo { get; set; }
+
+    /// <summary>Everyone this activity is assigned to (many-to-many with the project team).</summary>
+    public ICollection<TeamMember> Assignees { get; } = [];
+
+    /// <summary>When this task is a project head, the members that belong to its team
+    /// (inverse of <see cref="TeamMember.OwnerProject"/>) — used to collapse "all assigned" to
+    /// "Team".</summary>
+    public ICollection<TeamMember> ProjectTeam { get; } = [];
 
     // ---- personal-task features (top-level tasks in practice) ----
 

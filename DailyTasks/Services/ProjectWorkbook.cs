@@ -51,6 +51,29 @@ public static class ProjectWorkbook
         workbook.SaveAs(path);
     }
 
+    /// <summary>
+    /// Exports just the Gantt as a single styled worksheet — the layout (V-pairs, cycles,
+    /// sprint grouping) follows the methodology automatically. Board/flat methodologies have no
+    /// timeline, so they fall back to the data table rather than an empty file.
+    /// </summary>
+    public static void SaveGantt(TaskItem head, string path)
+    {
+        using var workbook = new XLWorkbook();
+
+        var chart = head.Methodology is { } m ? TaskRules.ChartTypeFor(m) : ChartType.SequentialGantt;
+
+        if (chart is ChartType.SequentialGantt or ChartType.VShapedGantt or ChartType.CyclicalGantt or ChartType.AgileGantt)
+        {
+            BuildGanttSheet(workbook, head, chart);
+        }
+        else
+        {
+            BuildSheet(workbook, SheetName(head.Title), head.Title, head, head.Children.ToList());
+        }
+
+        workbook.SaveAs(path);
+    }
+
     private static void BuildSheet(XLWorkbook workbook, string sheetName, string title, TaskItem head, IReadOnlyList<TaskItem> subtasks)
     {
         var ws = workbook.Worksheets.Add(UniqueName(workbook, sheetName));
@@ -290,6 +313,7 @@ public static class ProjectWorkbook
 
         var pairNames = VModelPairNames(head);
         var row = headerRow + 1;
+        var stripe = 0;
 
         foreach (var (groupHeader, phases, filter) in GanttGroups(head, chart))
         {
@@ -349,9 +373,16 @@ public static class ProjectWorkbook
                 {
                     var (start, end) = GanttSchedule.SubtaskSpan(s, phaseSpan, isWaterfall);
 
+                    // Faint zebra banding on the text columns for a cleaner, modern read.
+                    if (stripe++ % 2 == 1)
+                    {
+                        ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = XLColor.FromHtml("#F1F5F9");
+                        ws.Cell(row, 8).Style.Fill.BackgroundColor = XLColor.FromHtml("#F1F5F9");
+                    }
+
                     ws.Cell(row, 1).Value = phase.Name;
                     ws.Cell(row, 2).Value = s.Title;
-                    ws.Cell(row, 3).Value = s.AssignedTo?.Name ?? string.Empty;
+                    ws.Cell(row, 3).Value = AssigneeText(s, head.ProjectTeam.Count);
                     WriteDate(ws.Cell(row, 4), start);
                     WriteDate(ws.Cell(row, 5), end);
                     WriteDuration(ws.Cell(row, 6), start, end);
@@ -415,6 +446,13 @@ public static class ProjectWorkbook
         ws.SheetView.Freeze(headerRow, 8);
     }
 
+    /// <summary>Assignees for the export cell: "Team" when everyone's on it, else joined names.</summary>
+    private static string AssigneeText(TaskItem task, int teamCount)
+    {
+        var display = AssigneeSummary.Of(task.Assignees, teamCount);
+        return display.IsTeam ? "Team" : string.Join(", ", display.Chips.Select(c => c.Name));
+    }
+
     /// <summary>Writes a whole-day inclusive duration ("Nd"), leaving the cell blank when undated.</summary>
     private static void WriteDuration(IXLCell cell, DateTime? start, DateTime? end)
     {
@@ -439,9 +477,19 @@ public static class ProjectWorkbook
             return Progress.Of(TaskTree.Descendants(task)).Fraction;
         }
 
+        if (task.Status == WorkStatus.Done)
+        {
+            return 1.0;
+        }
+
+        // Honour a manually-typed % from the Gantt, matching the in-app view.
+        if (task.ProgressPercent is { } manual)
+        {
+            return Math.Clamp(manual, 0, 100) / 100.0;
+        }
+
         return task.Status switch
         {
-            WorkStatus.Done => 1.0,
             WorkStatus.Review => 0.75,
             WorkStatus.InProgress => 0.5,
             _ => 0.0,

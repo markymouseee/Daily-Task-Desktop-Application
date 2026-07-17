@@ -137,6 +137,22 @@ public sealed class SettingsService
         }
     }
 
+    /// <summary>Whether the first-run walkthrough has been shown (skipped or finished).</summary>
+    public bool TutorialCompleted
+    {
+        get => _preferences.TutorialCompleted;
+        set
+        {
+            if (_preferences.TutorialCompleted == value)
+            {
+                return;
+            }
+
+            _preferences.TutorialCompleted = value;
+            Save();
+        }
+    }
+
     /// <summary>Local repository the git watcher polls for task-completing commits.</summary>
     public string? GitRepoPath
     {
@@ -212,6 +228,8 @@ public sealed class SettingsService
         public DateTime? LastRecapDate { get; set; }
 
         public bool DeveloperFeaturesEnabled { get; set; }
+
+        public bool TutorialCompleted { get; set; }
 
         public string? GitRepoPath { get; set; }
 

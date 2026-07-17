@@ -31,6 +31,8 @@ public sealed class TaskService(IDbContextFactory<AppDbContext> factory) : ITask
             .AsNoTracking()
             .Include(t => t.Category)
             .Include(t => t.AssignedTo)
+            .Include(t => t.Assignees)
+            .Include(t => t.ProjectTeam)
             .ToListAsync();
 
         var phases = await db.Phases.AsNoTracking().ToListAsync();
@@ -78,7 +80,10 @@ public sealed class TaskService(IDbContextFactory<AppDbContext> factory) : ITask
     {
         await using var db = await factory.CreateDbContextAsync();
 
-        var existing = await db.Tasks.FindAsync(task.Id);
+        var existing = await db.Tasks
+            .Include(t => t.Assignees)
+            .FirstOrDefaultAsync(t => t.Id == task.Id);
+
         if (existing is null)
         {
             return;
@@ -86,7 +91,29 @@ public sealed class TaskService(IDbContextFactory<AppDbContext> factory) : ITask
 
         // Copies scalars + FKs (CategoryId/ParentTaskId/PhaseId/AssignedToId), ignoring navs.
         db.Entry(existing).CurrentValues.SetValues(task);
+        await ReconcileAssigneesAsync(db, existing, task.Assignees);
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>Adds/removes join rows so the stored assignees match the edited set.</summary>
+    private static async Task ReconcileAssigneesAsync(AppDbContext db, TaskItem existing, ICollection<TeamMember> desired)
+    {
+        var desiredIds = desired.Select(m => m.Id).ToHashSet();
+
+        foreach (var member in existing.Assignees.Where(m => !desiredIds.Contains(m.Id)).ToList())
+        {
+            existing.Assignees.Remove(member);
+        }
+
+        var currentIds = existing.Assignees.Select(m => m.Id).ToHashSet();
+
+        foreach (var id in desiredIds.Where(id => !currentIds.Contains(id)))
+        {
+            if (await db.TeamMembers.FindAsync(id) is { } member)
+            {
+                existing.Assignees.Add(member);
+            }
+        }
     }
 
     public async Task<TaskItem?> CompleteAsync(TaskItem task)
