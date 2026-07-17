@@ -14,6 +14,47 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
         </Style>
+
+        <!--  Compact inline "% done" editor — reads like a cell, highlights on hover/focus.  -->
+        <Style x:Key="PercentBox" TargetType="TextBox">
+            <Setter Property="Width" Value="50" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border
+                            x:Name="Bd"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            CornerRadius="6">
+                            <ScrollViewer
+                                x:Name="PART_ContentHost"
+                                Margin="{TemplateBinding Padding}"
+                                VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -148,10 +189,31 @@
 
                                                 <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Text="{Binding Activity}" TextTrimming="CharacterEllipsis" />
 
-                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Visibility="{Binding HasAssignee, Converter={StaticResource BoolToVisibility}}">
-                                                    <views:Avatar VerticalAlignment="Center" ColorHex="{Binding AssigneeColor}" DisplayName="{Binding AssigneeName}" Size="18" />
-                                                    <TextBlock Margin="5,0,0,0" VerticalAlignment="Center" FontSize="11.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding AssigneeFirstName}" TextTrimming="CharacterEllipsis" />
-                                                </StackPanel>
+                                                <Grid Grid.Column="1" VerticalAlignment="Center" ToolTip="{Binding AllAssigneesText}" Visibility="{Binding HasAssignee, Converter={StaticResource BoolToVisibility}}">
+                                                    <!--  Whole team  -->
+                                                    <Border
+                                                        HorizontalAlignment="Left"
+                                                        Padding="8,2"
+                                                        Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                                        CornerRadius="9"
+                                                        Visibility="{Binding IsTeamAssigned, Converter={StaticResource BoolToVisibility}}">
+                                                        <TextBlock FontSize="10.5" FontWeight="SemiBold" Foreground="White" Text="Team" />
+                                                    </Border>
+                                                    <!--  Individuals: first avatar + name, plus "+N" when more  -->
+                                                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsTeamAssigned, Converter={StaticResource InverseBoolToVisibility}}">
+                                                        <views:Avatar VerticalAlignment="Center" ColorHex="{Binding AssigneeColor}" DisplayName="{Binding AssigneeName}" Size="18" />
+                                                        <TextBlock Margin="5,0,0,0" VerticalAlignment="Center" FontSize="11.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding AssigneeFirstName}" TextTrimming="CharacterEllipsis" />
+                                                        <Border
+                                                            Margin="4,0,0,0"
+                                                            Padding="4,1"
+                                                            VerticalAlignment="Center"
+                                                            Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                                            CornerRadius="7"
+                                                            Visibility="{Binding HasExtraAssignees, Converter={StaticResource BoolToVisibility}}">
+                                                            <TextBlock FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding ExtraAssigneeText}" />
+                                                        </Border>
+                                                    </StackPanel>
+                                                </Grid>
 
                                                 <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="11.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding StartText}" />
                                                 <TextBlock Grid.Column="3" VerticalAlignment="Center" FontSize="11.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="{Binding EndText}" />
@@ -161,20 +223,16 @@
                                                     <TextBlock VerticalAlignment="Center" FontSize="10.5" FontWeight="SemiBold" Foreground="{Binding Status, Converter={StaticResource SubtaskStatusToBrush}}" Text="{Binding StatusText}" />
                                                 </Border>
 
-                                                <!--  % done: editable dropdown for a leaf activity, read-only rollup for a parent.  -->
-                                                <ComboBox
+                                                <!--  % done: type a number on a leaf activity; read-only rollup for a parent.  -->
+                                                <TextBox
                                                     Grid.Column="6"
-                                                    Height="24"
-                                                    Padding="6,0"
-                                                    VerticalAlignment="Center"
-                                                    VerticalContentAlignment="Center"
-                                                    DisplayMemberPath="Label"
-                                                    DropDownClosed="OnPercentDropDownClosed"
-                                                    FontSize="11"
-                                                    ItemsSource="{Binding DataContext.StatusOptions, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                    SelectedValue="{Binding Status, Mode=OneWay}"
-                                                    SelectedValuePath="Status"
-                                                    ToolTip="Set % done"
+                                                    MaxLength="3"
+                                                    GotKeyboardFocus="OnPercentFocused"
+                                                    LostFocus="OnPercentCommit"
+                                                    PreviewKeyDown="OnPercentKeyDown"
+                                                    Style="{StaticResource PercentBox}"
+                                                    Text="{Binding Percent, Mode=OneWay}"
+                                                    ToolTip="Type a % done (0–100), then Enter"
                                                     Visibility="{Binding IsLeaf, Converter={StaticResource BoolToVisibility}}" />
                                                 <TextBlock
                                                     Grid.Column="6"

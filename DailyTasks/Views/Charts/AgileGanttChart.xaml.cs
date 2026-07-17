@@ -1,6 +1,5 @@
 using System.Windows.Controls;
 using System.Windows.Input;
-using DailyTasks.Models;
 using DailyTasks.ViewModels;
 
 namespace DailyTasks.Views;
@@ -46,13 +45,46 @@ public partial class AgileGanttChart : UserControl
         e.Handled = true;
     }
 
-    /// <summary>Commit an inline "% done" edit once the dropdown closes (a no-op if unchanged).</summary>
-    private void OnPercentDropDownClosed(object? sender, EventArgs e)
+    /// <summary>Select the whole value on focus so typing replaces it.</summary>
+    private void OnPercentFocused(object sender, KeyboardFocusChangedEventArgs e)
     {
-        if (sender is ComboBox { DataContext: AgileGanttRow row, SelectedValue: WorkStatus status }
-            && DataContext is AgileGanttViewModel gantt)
+        if (sender is TextBox box)
         {
-            gantt.SetStatus(row, status);
+            box.Dispatcher.BeginInvoke(box.SelectAll);
+        }
+    }
+
+    /// <summary>Commit a typed "% done" on Enter.</summary>
+    private void OnPercentKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && sender is TextBox box)
+        {
+            CommitPercent(box);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>Commit a typed "% done" when the field loses focus (a no-op if unchanged).</summary>
+    private void OnPercentCommit(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (sender is TextBox box)
+        {
+            CommitPercent(box);
+        }
+    }
+
+    private void CommitPercent(TextBox box)
+    {
+        if (box.DataContext is not AgileGanttRow row || DataContext is not AgileGanttViewModel gantt)
+        {
+            return;
+        }
+
+        // Accept "30", "30%", or any text with digits.
+        var digits = new string((box.Text ?? string.Empty).Where(char.IsDigit).ToArray());
+        if (int.TryParse(digits, out var percent))
+        {
+            gantt.SetPercent(row, percent);
         }
     }
 }
